@@ -1,0 +1,14 @@
+{
+  "domain": "atomberg",
+  "name": "Atomberg",
+  "codeowners": [
+    "@dasshubham762"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/dasshubham762/atomberg-integration",
+  "issue_tracker": "https://github.com/dasshubham762/issues",
+  "iot_class": "cloud_push",
+  "single_config_entry": true,
+  "version": "0.0.1"
+}

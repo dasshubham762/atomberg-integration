@@ -1,0 +1,8 @@
+{
+  "files.eol": "\n",
+  "editor.formatOnSave": true,
+  "files.trimTrailingWhitespace": true,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  }
+}

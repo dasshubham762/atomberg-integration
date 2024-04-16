@@ -1,0 +1,19 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Atomberg Cloud Configuration",
+        "description": "Input the credentials for Atomberg Cloud API.",
+        "data": {
+          "api_key": "API key",
+          "refresh_token": "Refresh token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to Atomberg integration.",
+      "invalid_auth": "Failed to authenticate with server.",
+      "unknown": "An unknown error occurred. See log for details."
+    }
+  }
+}

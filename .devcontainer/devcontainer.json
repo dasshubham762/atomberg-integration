@@ -1,0 +1,37 @@
+{
+  "name": "Atomberg integration development",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "postCreateCommand": "scripts/setup",
+  "forwardPorts": [8123],
+  "portsAttributes": {
+    "8123": {
+      "label": "Home Assistant",
+      "onAutoForward": "notify"
+    }
+  },
+  "containerEnv": {
+    "DEVCONTAINER": "1"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "files.eol": "\n",
+        "editor.formatOnSave": true,
+        "files.trimTrailingWhitespace": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        }
+      },
+      "extensions": [
+        "charliermarsh.ruff",
+        "ms-python.pylint",
+        "ms-python.vscode-pylance",
+        "visualstudioexptteam.vscodeintellicode",
+        "redhat.vscode-yaml",
+        "esbenp.prettier-vscode",
+        "GitHub.vscode-pull-request-github"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}

@@ -1,0 +1,23 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Home Assistant",
+      "type": "shell",
+      "command": "scripts/develop",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint using ruff",
+      "type": "shell",
+      "command": "scripts/lint",
+      "problemMatcher": []
+    },
+    {
+      "label": "Setup repository",
+      "type": "shell",
+      "command": "scripts/setup",
+      "problemMatcher": []
+    }
+  ]
+}
