@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Setups the repository.
+
+# Stop on errors
+set -e
+
+cd "$(dirname "$0")/.."
+
+# Setup venv if not devcontainer of venv is not activated
+if [ ! -n "$DEVCONTAINER" ] && [ ! -n "$VIRTUAL_ENV" ];then
+  virtualenv .venv
+  source .venv/bin/activate
+fi
+
+# Install packages
+sudo apt-get update
+sudo apt-get install -y libpcap-dev ffmpeg
+
+# Install python dependencies
+echo "Installing development dependencies..."
+python3 -m pip install -r requirements.txt
+
+# Create config folder if does not exist
+mkdir -p config
+
+hass --script ensure_config -c config
+
+if ! grep -R "logger" config/configuration.yaml >> /dev/null;then
+echo "
+logger:
+  default: info
+  logs:
+    custom_components.atomberg: debug
+" >> config/configuration.yaml
+fi
