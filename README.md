@@ -9,19 +9,29 @@
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
+*Integration for **[Atomberg smart fans](https://atomberg.com/atomberg-ceiling-fans?page=1&fan_sub_category%5Bfilter%5D=Smart+Fans%2C270)***
+
+### Tested on
+- **[Atomberg Renesa+ Ceiling Fan](https://atomberg.com/atomberg-renesa-smart-iot-enabled-ceiling-fans-with-bldc-motor-and-remote?attribute_pa_color=Earth+Brown&attribute_pa_sweepsize=1200mm)**
+
 ## Installation
 
 1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`).
-1. If you do not have a `custom_components` directory (folder) there, you need to create it.
-1. In the `custom_components` directory (folder) create a new folder called `atomberg`.
-1. Download _all_ the files from the `custom_components/atomberg/` directory (folder) in this repository.
-1. Place the files you downloaded in the new directory (folder) you created.
-1. Restart Home Assistant
-1. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Atomberg"
+2. If you do not have a `custom_components` directory (folder) there, you need to create it.
+3. In the `custom_components` directory (folder) create a new folder called `atomberg`.
+4. Download _all_ the files from the `custom_components/atomberg/` directory (folder) in this repository.
+5. Place the files you downloaded in the new directory (folder) you created.
+6. Restart Home Assistant
+7. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Atomberg"
+8. Enter your `api_key` and `refresh_token`, then Submit the form and done
 
 ## Configuration is done in the UI
 
 <!---->
+
+## What's not working
+- Timer
+- LED brightness control for Aris series fans
 
 ## Contributions are welcome!
 
