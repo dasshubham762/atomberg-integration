@@ -123,6 +123,7 @@ class AtombergCloudAPI:
                 state = next(
                     filter(lambda x: x["device_id"] == dev["device_id"], states)
                 )
+                states.remove(state)
                 # Keep is_online=False unless it's presense detected through udp broadcasts
                 state["is_online"] = False
                 # `last_recorded_speed > speed` to use single key for speed
