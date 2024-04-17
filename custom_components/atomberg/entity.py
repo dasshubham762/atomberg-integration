@@ -108,7 +108,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
             self._device.async_update_state(
                 {
                     "is_online": now.timestamp() - self._device.last_seen
-                    > AVAILABILITY_TIMEOUT
+                    <= AVAILABILITY_TIMEOUT
                 }
             )
             self.update_ha_state_if_required()
