@@ -1,5 +1,6 @@
 """Support for Atomberg Fans."""
 
+from logging import getLogger
 from typing import Any
 
 from homeassistant.components.fan import FanEntity, FanEntityFeature
@@ -14,8 +15,10 @@ from homeassistant.util.percentage import (
 
 from .const import DOMAIN, SUPPORTED_FAN_SERIES
 from .coordinator import AtombergDataUpdateCoordinator
-from .device import AtombergDevice
+from .device import ATTR_POWER, ATTR_SPEED, AtombergDevice
 from .entity import AtombergEntity
+
+_LOGGER = getLogger(__name__)
 
 ORDERED_FAN_SPEEDS = range(1, 7)
 
@@ -25,7 +28,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Automatically setup the fans from the devices list."""
+    """Automatically setup the fan entities from the devices list."""
     coordinator: AtombergDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     api = coordinator.api
     async_add_entities(
@@ -47,7 +50,7 @@ class AtombergFanEntity(AtombergEntity, FanEntity):
         device: AtombergDevice,
     ) -> None:
         """Init Atomberg Fan."""
-        super().__init__(coordinator, device)
+        super().__init__(coordinator, device, _LOGGER)
 
         self._attr_unique_id = self._get_unique_id(Platform.FAN)
         self._attr_name = self._device.name
@@ -55,7 +58,7 @@ class AtombergFanEntity(AtombergEntity, FanEntity):
     @property
     def is_on(self) -> bool:
         """Whether the fan is on."""
-        return self.device_state["power"]
+        return self.device_state[ATTR_POWER]
 
     @property
     def speed_count(self) -> int:
@@ -67,7 +70,7 @@ class AtombergFanEntity(AtombergEntity, FanEntity):
         """Get fan speed in percentage."""
         return ordered_list_item_to_percentage(
             ORDERED_FAN_SPEEDS,
-            self.device_state.get("speed", ORDERED_FAN_SPEEDS[0]),
+            self.device_state.get(ATTR_SPEED, ORDERED_FAN_SPEEDS[0]),
         )
 
     async def async_set_percentage(self, percentage: int) -> None:

@@ -1,7 +1,7 @@
 """Base Atomberg entity."""
 
 from datetime import datetime, timedelta
-from logging import getLogger
+from logging import Logger
 
 from homeassistant.const import Platform
 from homeassistant.core import callback
@@ -13,17 +13,28 @@ from homeassistant.util.dt import utcnow
 
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import AtombergDataUpdateCoordinator
-from .device import AtombergDevice
+from .device import (
+    ATTR_IS_ONLINE,
+    ATTR_LED,
+    ATTR_POWER,
+    ATTR_SLEEP,
+    ATTR_SPEED,
+    ATTR_TIMER_HOURS,
+    ATTR_TIMER_TIME_ELAPSED_MINS,
+    AtombergDevice,
+)
 
-AVAILABILITY_TIMEOUT = 10  # Seconds
-_LOGGER = getLogger(__name__)
+AVAILABILITY_TIMEOUT = 15  # Seconds
 
 
 class AtombergEntity(CoordinatorEntity, Entity):
     """Atomberg base entity."""
 
     def __init__(
-        self, coordinator: AtombergDataUpdateCoordinator, device: AtombergDevice
+        self,
+        coordinator: AtombergDataUpdateCoordinator,
+        device: AtombergDevice,
+        logger: Logger,
     ) -> None:
         """Init Atomberg base entity."""
         super().__init__(coordinator)
@@ -37,6 +48,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
             manufacturer=MANUFACTURER,
             model=self._device.model,
         )
+        self.logger = logger
 
         # Refresh availability on fixed interval
         async_track_time_interval(
@@ -56,7 +68,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
     @property
     def available(self) -> bool:
         """Whether the entity is online."""
-        return self.device_state["is_online"]
+        return self.device_state[ATTR_IS_ONLINE]
 
     @property
     def device_state(self) -> dict:
@@ -75,18 +87,18 @@ class AtombergEntity(CoordinatorEntity, Entity):
 
             state.update(
                 {
-                    "power": (0x10) & value > 0,
-                    "led": (0x20) & value > 0,
-                    "sleep_mode": (0x80) & value > 0,
-                    "speed": (0x07) & value,
-                    "timer_hours": round((0x0F0000 & value) / 65536, 0),
-                    "timer_time_elapsed_mins": round(
+                    ATTR_POWER: (0x10) & value > 0,
+                    ATTR_LED: (0x20) & value > 0,
+                    ATTR_SLEEP: (0x80) & value > 0,
+                    ATTR_SPEED: (0x07) & value,
+                    ATTR_TIMER_HOURS: round((0x0F0000 & value) / 65536, 0),
+                    ATTR_TIMER_TIME_ELAPSED_MINS: round(
                         (0xFF000000 & value) * 4 / 16777216, 0
                     ),
                 }
             )
 
-        self._device.async_update_state({**state, "is_online": True})
+        self._device.async_update_state({**state, ATTR_IS_ONLINE: True})
         self._device.async_update_last_seen(utcnow().timestamp())
         self.update_ha_state_if_required()
 
@@ -99,7 +111,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
     def _refresh_availability(self, now: datetime):
         """Update is_online state based on last_seen."""
         if self._device.last_seen:
-            _LOGGER.debug(
+            self.logger.debug(
                 "Refreshing availability of %s (%s) - (%s)",
                 self._device.name,
                 self._device.id,
@@ -107,7 +119,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
             )
             self._device.async_update_state(
                 {
-                    "is_online": now.timestamp() - self._device.last_seen
+                    ATTR_IS_ONLINE: now.timestamp() - self._device.last_seen
                     <= AVAILABILITY_TIMEOUT
                 }
             )

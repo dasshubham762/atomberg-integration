@@ -4,12 +4,26 @@ from copy import deepcopy
 from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.components.light import ATTR_BRIGHTNESS
 from homeassistant.core import callback
 
 if TYPE_CHECKING:
     from .api import AtombergCloudAPI
 
 _LOGGER = getLogger(__name__)
+
+ATTR_IS_ONLINE = "is_online"
+ATTR_POWER = "power"
+ATTR_SPEED = "speed"
+ATTR_SLEEP = "sleep"
+ATTR_LIGHT_MODE = "light_mode"
+ATTR_LED = "led"
+ATTR_TIMER_HOURS = "timer_hours"
+ATTR_TIMER_TIME_ELAPSED_MINS = "timer_time_elapsed_mins"
+LIGHT_MODE_DAYLIGHT = "daylight"
+LIGHT_MODE_COOL = "cool"
+LIGHT_MODE_WARM = "warm"
+LED_BRIGHTNESS_SCALE = (10, 100)
 
 
 class AtombergDevice:
@@ -68,14 +82,14 @@ class AtombergDevice:
 
     async def async_turn_on(self):
         """Turn on."""
-        cmd = {"power": True}
+        cmd = {ATTR_POWER: True}
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: turned on", self.name)
             self.async_update_state(cmd)
 
     async def async_turn_off(self):
         """Turn off."""
-        cmd = {"power": False}
+        cmd = {ATTR_POWER: False}
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: turned off", self.name)
             self.async_update_state(cmd)
@@ -84,35 +98,31 @@ class AtombergDevice:
         """Set speed."""
         if value not in range(1, 7):
             raise ValueError("Value must in range of 1-6.")
-        cmd = {"speed": value}
+        cmd = {ATTR_SPEED: value}
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: set speed %d", self.name, value)
             self.async_update_state(cmd)
 
-    async def async_turn_on_light(self):
-        """Turn on light."""
-        cmd = {"led": True}
-        if await self._api.async_send_command(self.id, cmd):
-            _LOGGER.debug("%s: turned on LED", self.name)
-            self.async_update_state(cmd)
+    async def async_send_light_command(self, cmd: dict):
+        """Send combined light command."""
+        supported_cmds = {ATTR_LED, ATTR_LIGHT_MODE, ATTR_BRIGHTNESS}
+        if not set(cmd.keys()).issubset(supported_cmds):
+            raise ValueError(f"Supported commands are: {', '.join(supported_cmds)}")
 
-    async def async_turn_off_light(self):
-        """Turn off light."""
-        cmd = {"led": False}
         if await self._api.async_send_command(self.id, cmd):
-            _LOGGER.debug("%s: Turned off LED", self.name)
+            _LOGGER.debug("%s: Light command executed successfully.", self.name)
             self.async_update_state(cmd)
 
     async def async_turn_on_sleep_mode(self):
         """Turn on sleep mode."""
-        cmd = {"sleep": True}
+        cmd = {ATTR_SLEEP: True}
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: turned on sleep mode", self.name)
             self.async_update_state(cmd)
 
     async def async_turn_off_sleep_mode(self):
         """Turn off sleep mode."""
-        cmd = {"sleep": False}
+        cmd = {ATTR_SLEEP: False}
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: turned off sleep mode", self.name)
             self.async_update_state(cmd)

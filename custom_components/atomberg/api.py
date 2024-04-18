@@ -2,6 +2,7 @@
 
 import datetime
 import functools
+from copy import deepcopy
 from logging import getLogger
 from typing import Literal
 
@@ -124,10 +125,6 @@ class AtombergCloudAPI:
                     filter(lambda x: x["device_id"] == dev["device_id"], states)
                 )
                 states.remove(state)
-                # Keep is_online=False unless it's presense detected through udp broadcasts
-                state["is_online"] = False
-                # `last_recorded_speed > speed` to use single key for speed
-                state["speed"] = state.pop("last_recorded_speed")
                 self.device_list[state.pop("device_id")] = AtombergDevice(
                     data={**dev, "state": state}, api=self
                 )
@@ -148,12 +145,24 @@ class AtombergCloudAPI:
 
         data = resp.json()
         if data["status"] == "Success":
-            return data["message"]["device_state"]
+            device_state = []
+            for state in deepcopy(data["message"]["device_state"]):
+                # Keep is_online=False unless it's presense detected through udp broadcasts
+                state["is_online"] = False
+                # Rename some keys for ease of access
+                state["speed"] = state.pop("last_recorded_speed")
+                state["sleep"] = state.pop("sleep_mode")
+                if state.get("last_recorded_brightness"):
+                    state["brightness"] = state.pop("last_recorded_brightness")
+                if state.get("last_recorded_color"):
+                    state["light_mode"] = state.pop("last_recorded_color")
+                device_state.append(state)
+
+            return device_state
 
     async def async_send_command(self, device_id: str, command: dict) -> bool:
         """Send command to a device."""
         payload = {"device_id": device_id, "command": command}
         resp = await self.async_make_request("/v1/send_command", "POST", body=payload)
-
         data = resp.json()
         return data["status"] == "Success"

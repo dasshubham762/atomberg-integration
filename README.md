@@ -31,7 +31,6 @@
 
 ## What's not working
 - Timer
-- LED brightness control for Aris series fans
 
 ## Contributions are welcome!
 
