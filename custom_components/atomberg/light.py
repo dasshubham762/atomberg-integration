@@ -16,7 +16,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util.color import scale_to_ranged_value, value_to_brightness
 
-from .const import DOMAIN
 from .coordinator import AtombergDataUpdateCoordinator
 from .device import (
     ATTR_LED,
@@ -27,7 +26,7 @@ from .device import (
     LIGHT_MODE_WARM,
     AtombergDevice,
 )
-from .entity import AtombergEntity
+from .entity import AtombergEntity, platform_async_setup_entry
 
 _LOGGER = getLogger(__name__)
 
@@ -44,13 +43,8 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Automatically setup the light entities from the devices list."""
-    coordinator: AtombergDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    api = coordinator.api
-
-    # Add Light entities
-    async_add_entities(
-        AtombergFanLightEntity(coordinator, device)
-        for device in api.device_list.values()
+    await platform_async_setup_entry(
+        hass, entry, async_add_entities, AtombergFanLightEntity
     )
 
 

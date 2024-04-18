@@ -13,10 +13,9 @@ from homeassistant.util.percentage import (
     percentage_to_ordered_list_item,
 )
 
-from .const import DOMAIN, SUPPORTED_FAN_SERIES
 from .coordinator import AtombergDataUpdateCoordinator
 from .device import ATTR_POWER, ATTR_SPEED, AtombergDevice
-from .entity import AtombergEntity
+from .entity import AtombergEntity, platform_async_setup_entry
 
 _LOGGER = getLogger(__name__)
 
@@ -29,14 +28,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Automatically setup the fan entities from the devices list."""
-    coordinator: AtombergDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    api = coordinator.api
-    async_add_entities(
-        AtombergFanEntity(coordinator, device)
-        for device in filter(
-            lambda d: d.series in SUPPORTED_FAN_SERIES, api.device_list.values()
-        )
-    )
+    await platform_async_setup_entry(hass, entry, async_add_entities, AtombergFanEntity)
 
 
 class AtombergFanEntity(AtombergEntity, FanEntity):

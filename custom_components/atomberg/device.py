@@ -2,13 +2,12 @@
 
 from copy import deepcopy
 from logging import getLogger
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from homeassistant.components.light import ATTR_BRIGHTNESS
 from homeassistant.core import callback
 
-if TYPE_CHECKING:
-    from .api import AtombergCloudAPI
+from .api import AtombergCloudAPI
 
 _LOGGER = getLogger(__name__)
 
@@ -29,14 +28,14 @@ LED_BRIGHTNESS_SCALE = (10, 100)
 class AtombergDevice:
     """Atomberg device."""
 
-    def __init__(self, data: dict[str, Any], **kwargs) -> None:
+    def __init__(self, data: dict[str, Any], api: AtombergCloudAPI) -> None:
         """Init Atomberg device."""
         self._device_id = data["device_id"]
         self._color = data["color"]
         self._series = data["series"]
         self._model = data["model"]
         self._name = data["name"]
-        self._api: "AtombergCloudAPI" = kwargs["api"]
+        self._api = api
         self._state: dict = data["state"]
         self._last_seen: int = None
 

@@ -2,11 +2,14 @@
 
 from datetime import datetime, timedelta
 from logging import Logger
+from typing import TypeVar
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.dt import utcnow
@@ -25,6 +28,22 @@ from .device import (
 )
 
 AVAILABILITY_TIMEOUT = 15  # Seconds
+
+_EntityT = TypeVar("_EntityT", bound="AtombergEntity")
+
+
+async def platform_async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+    entity_type: _EntityT,
+) -> None:
+    """Set up an Atomberg platform."""
+    coordinator: AtombergDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    async_add_entities(
+        entity_type(coordinator=coordinator, device=device)
+        for device in coordinator.get_devices()
+    )
 
 
 class AtombergEntity(CoordinatorEntity, Entity):
@@ -48,7 +67,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
             manufacturer=MANUFACTURER,
             model=self._device.model,
         )
-        self.logger = logger
+        self._logger = logger
         self._stop_availability_refresher = None
 
     def _get_unique_id(
@@ -107,7 +126,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
     def _refresh_availability(self, now: datetime):
         """Update is_online state based on last_seen."""
         if self._device.last_seen:
-            self.logger.debug(
+            self._logger.debug(
                 "Refreshing availability of %s (%s) - (%s)",
                 self._device.name,
                 self._device.id,

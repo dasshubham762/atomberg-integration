@@ -9,10 +9,9 @@ from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
 from .coordinator import AtombergDataUpdateCoordinator
 from .device import ATTR_SLEEP, AtombergDevice
-from .entity import AtombergEntity
+from .entity import AtombergEntity, platform_async_setup_entry
 
 _LOGGER = getLogger(__name__)
 
@@ -23,13 +22,8 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Automatically setup the switch entities from the devices list."""
-    coordinator: AtombergDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    api = coordinator.api
-
-    # Add binary sleep mode switch entities
-    async_add_entities(
-        AtombergSleepModeSwitchEntity(coordinator, device)
-        for device in api.device_list.values()
+    await platform_async_setup_entry(
+        hass, entry, async_add_entities, AtombergSleepModeSwitchEntity
     )
 
 

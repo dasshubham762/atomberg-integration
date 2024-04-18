@@ -12,8 +12,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util.dt import utcnow
 from requests import Response
 
-from .device import AtombergDevice
-
 _LOGGER = getLogger(__name__)
 
 
@@ -27,7 +25,7 @@ class AtombergCloudAPI:
         self._api_key = api_key
         self._refresh_token = refresh_token
         self._access_token = None
-        self.device_list: dict[str, AtombergDevice] = {}
+        self.device_list: dict[str, dict] = {}
 
     async def test_connection(self):
         """Test API connection."""
@@ -125,9 +123,7 @@ class AtombergCloudAPI:
                     filter(lambda x: x["device_id"] == dev["device_id"], states)
                 )
                 states.remove(state)
-                self.device_list[state.pop("device_id")] = AtombergDevice(
-                    data={**dev, "state": state}, api=self
-                )
+                self.device_list[state.pop("device_id")] = {**dev, "state": state}
             _LOGGER.info("Found %d atomberg devices", len(self.device_list))
             status = True
         else:  # noqa: RET505

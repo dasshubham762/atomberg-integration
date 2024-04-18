@@ -7,6 +7,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .api import AtombergCloudAPI
 from .const import MANUFACTURER
+from .device import AtombergDevice
 from .udp_listener import UDPListener
 
 _LOGGER = getLogger(__name__)
@@ -25,3 +26,10 @@ class AtombergDataUpdateCoordinator(DataUpdateCoordinator):
 
         # Set callback on udp listener
         self.udp_listener.set_callback(self.async_set_updated_data)
+
+    def get_devices(self) -> list[AtombergDevice]:
+        """Get list of available devices."""
+        return [
+            AtombergDevice(data=data, api=self.api)
+            for data in self.api.device_list.values()
+        ]
