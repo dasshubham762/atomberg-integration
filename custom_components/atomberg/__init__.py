@@ -12,7 +12,13 @@ from .const import CONF_REFRESH_TOKEN, DOMAIN
 from .coordinator import AtombergDataUpdateCoordinator
 from .udp_listener import UDPListener
 
-PLATFORMS: list[Platform] = [Platform.FAN, Platform.SWITCH, Platform.LIGHT]
+PLATFORMS: list[Platform] = [
+    Platform.FAN,
+    Platform.SWITCH,
+    Platform.LIGHT,
+    Platform.SENSOR,
+    Platform.SELECT,
+]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

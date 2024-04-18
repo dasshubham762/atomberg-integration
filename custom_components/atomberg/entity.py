@@ -108,7 +108,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
                     ATTR_SPEED: (0x07) & value,
                     ATTR_TIMER_HOURS: round((0x0F0000 & value) / 65536, 0),
                     ATTR_TIMER_TIME_ELAPSED_MINS: round(
-                        (0xFF000000 & value) * 4 / 16777216, 0
+                        (0xFF000000 & value) * 4 / 16777216
                     ),
                 }
             )

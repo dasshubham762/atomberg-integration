@@ -23,6 +23,13 @@ LIGHT_MODE_DAYLIGHT = "daylight"
 LIGHT_MODE_COOL = "cool"
 LIGHT_MODE_WARM = "warm"
 LED_BRIGHTNESS_SCALE = (10, 100)
+TIMER_MAPPING = [
+    (0, "Off"),
+    (1, "1 hour"),
+    (2, "2 hours"),
+    (3, "3 hours"),
+    (6, "6 hours"),
+]
 
 
 class AtombergDevice:
@@ -132,7 +139,7 @@ class AtombergDevice:
             raise ValueError("Value must in range of 0-4.")
         if await self._api.async_send_command(self.id, {"timer": value}):
             _LOGGER.debug("%s: set sleep mode: %d", self.name, value)
-            self.async_update_state({"timer_hours": value})
+            self.async_update_state({ATTR_TIMER_HOURS: TIMER_MAPPING[value][0]})
 
     @callback
     def async_update_state(self, new_state: dict):
