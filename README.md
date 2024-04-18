@@ -35,7 +35,8 @@ If you want to contribute to this please read the [Contribution guidelines](CONT
 
 ## Credits
 
-Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [integration_blueprint][integration_blueprint] template
+- Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [integration_blueprint][integration_blueprint] template
+- Atomberg IoT Team
 
 ***
 
