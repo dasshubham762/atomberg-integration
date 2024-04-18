@@ -49,11 +49,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
             model=self._device.model,
         )
         self.logger = logger
-
-        # Refresh availability on fixed interval
-        async_track_time_interval(
-            self.hass, self._refresh_availability, timedelta(seconds=30)
-        )
+        self._stop_availability_refresher = None
 
     def _get_unique_id(
         self, platform: Platform | None = None, suffix: str | None = None
@@ -124,3 +120,19 @@ class AtombergEntity(CoordinatorEntity, Entity):
                 }
             )
             self.update_ha_state_if_required()
+
+    async def async_added_to_hass(self) -> None:
+        """Run when entity is added to hass."""
+        await super().async_added_to_hass()
+
+        # Start availability refresher
+        self._stop_availability_refresher = async_track_time_interval(
+            self.hass, self._refresh_availability, timedelta(seconds=30)
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Run when entity will be removed from hass."""
+        # Stop availability refresher
+        if self._stop_availability_refresher:
+            self._stop_availability_refresher()
+            self._stop_availability_refresher = None
