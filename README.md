@@ -11,7 +11,7 @@
 
 *Integration for **[Atomberg smart fans](https://atomberg.com/atomberg-ceiling-fans?page=1&fan_sub_category%5Bfilter%5D=Smart+Fans%2C270)***
 
-### Tested on
+## Tested on
 - **[Atomberg Renesa+ Ceiling Fan](https://atomberg.com/atomberg-renesa-smart-iot-enabled-ceiling-fans-with-bldc-motor-and-remote?attribute_pa_color=Earth+Brown&attribute_pa_sweepsize=1200mm)**
 
 ## Installation
@@ -29,6 +29,11 @@
 
 <!---->
 
+## Compatibility and Requirements
+
+- Please note that this integration is designed for the latest series of Atomberg fans and may not work with older models.
+- The integration relies on cloud APIs for communication with your Atomberg fans.
+
 ## Contributions are welcome!
 
 If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
@@ -38,7 +43,6 @@ If you want to contribute to this please read the [Contribution guidelines](CONT
 - Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [integration_blueprint][integration_blueprint] template
 - Atomberg IoT Team
 
-***
 
 [integration_blueprint]: https://github.com/ludeeus/integration_blueprint
 [commits-shield]: https://img.shields.io/github/commit-activity/y/dasshubham762/atomberg-integration.svg?style=for-the-badge
