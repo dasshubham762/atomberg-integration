@@ -10,5 +10,5 @@
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/dasshubham762/atomberg-integration/issues",
   "single_config_entry": true,
-  "version": "1.1.0"
+  "version": "1.1.1"
 }
