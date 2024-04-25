@@ -16,18 +16,45 @@
 
 ## Installation
 
+### Method 1: Using HACS
+
+1. Open your Home Assistant UI.
+2. Go to "HACS" (Home Assistant Community Store).
+3. Click on "Integrations" from the top menu.
+4. Click the three dots in the upper right corner and select "Custom Repositories".
+5. Under "Add custom repository", enter:
+    - **URL:** `https://github.com/dasshubham762/atomberg-integration`
+    - **Category:** Integration
+6. Click "Add".
+7. Go back to the "Integrations" tab in HACS.
+8. Search for "Atomberg" in the search bar.
+9. You should see the Atomberg integration listed.
+10. Click "Install" and follow any prompts to complete the installation.
+
+### Method 2: Manual Installation
+
 1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`).
 2. If you do not have a `custom_components` directory (folder) there, you need to create it.
 3. In the `custom_components` directory (folder) create a new folder called `atomberg`.
 4. Download _all_ the files from the `custom_components/atomberg/` directory (folder) in this repository.
 5. Place the files you downloaded in the new directory (folder) you created.
-6. Restart Home Assistant
-7. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Atomberg"
-8. Enter your `api_key` and `refresh_token`, then Submit the form and done
+6. Restart Home Assistant.
 
-## Configuration is done in the UI
+## Configuration
 
-<!---->
+### Step 1: Generate API Key and Refresh Token
+1. Go to [Atomberg Developer Portal](https://developer.atomberg-iot.com/#overview).
+2. Follow the instructions to generate your `api_key` and `refresh_token`.
+
+### Step 2: Add Atomberg Integration to Home Assistant
+1. Open your Home Assistant UI.
+2. Navigate to "Configuration" -> "Integrations".
+3. Click the "+" icon to add a new integration.
+4. Search for "Atomberg" in the integration search bar and select it.
+
+### Step 3: Enter API Key and Refresh Token
+1. Enter your `api_key` and `refresh_token` in the appropriate fields.
+2. Submit the form.
 
 ## Compatibility and Requirements
 
