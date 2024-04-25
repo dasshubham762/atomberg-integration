@@ -17,13 +17,18 @@ from homeassistant.util.dt import utcnow
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import AtombergDataUpdateCoordinator
 from .device import (
+    ATTR_BRIGHTNESS,
     ATTR_IS_ONLINE,
     ATTR_LED,
+    ATTR_LIGHT_MODE,
     ATTR_POWER,
     ATTR_SLEEP,
     ATTR_SPEED,
     ATTR_TIMER_HOURS,
     ATTR_TIMER_TIME_ELAPSED_MINS,
+    LIGHT_MODE_COOL,
+    LIGHT_MODE_DAYLIGHT,
+    LIGHT_MODE_WARM,
     AtombergDevice,
 )
 
@@ -106,12 +111,30 @@ class AtombergEntity(CoordinatorEntity, Entity):
                     ATTR_LED: (0x20) & value > 0,
                     ATTR_SLEEP: (0x80) & value > 0,
                     ATTR_SPEED: (0x07) & value,
-                    ATTR_TIMER_HOURS: round((0x0F0000 & value) / 65536, 0),
+                    ATTR_TIMER_HOURS: round((0x0F0000 & value) / 65536),
                     ATTR_TIMER_TIME_ELAPSED_MINS: round(
                         (0xFF000000 & value) * 4 / 16777216
                     ),
                 }
             )
+
+            # Set brightness value if device supports brightness control
+            if self._device.supports_brightness_control:
+                state[ATTR_BRIGHTNESS] = round(((0x7F00) & value) / 256)
+
+            # Set color mode if device supports color modes
+            if self._device.supports_color_effect:
+                cool = ((0x08) & value) > 0
+                warm = ((0x8000) & value) > 0
+
+                if cool and warm:
+                    light_mode = LIGHT_MODE_DAYLIGHT
+                elif cool:
+                    light_mode = LIGHT_MODE_COOL
+                elif warm:
+                    light_mode = LIGHT_MODE_WARM
+
+                state[ATTR_LIGHT_MODE] = light_mode
 
         self._device.async_update_state({**state, ATTR_IS_ONLINE: True})
         self._device.async_update_last_seen(utcnow().timestamp())

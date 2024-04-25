@@ -30,8 +30,6 @@ from .entity import AtombergEntity, platform_async_setup_entry
 
 _LOGGER = getLogger(__name__)
 
-SUPPORTED_BRIGHTNESS_CONTROL_SERIES = ["I1"]
-SUPPORTED_COLOR_EFFECT_SERIES = ["I1"]
 FAN_LED_EFFECTS = {
     LIGHT_MODE_DAYLIGHT.title(): LIGHT_MODE_DAYLIGHT,
     LIGHT_MODE_COOL.title(): LIGHT_MODE_COOL,
@@ -63,12 +61,12 @@ class AtombergFanLightEntity(AtombergEntity, LightEntity):
         # Controls
         self._attr_supported_color_modes = {
             ColorMode.BRIGHTNESS
-            if self._device.series in SUPPORTED_BRIGHTNESS_CONTROL_SERIES
+            if self._device.supports_brightness_control
             else ColorMode.ONOFF
         }
 
         # Light modes
-        if self._device.series in SUPPORTED_COLOR_EFFECT_SERIES:
+        if self._device.supports_color_effect:
             self._attr_supported_features = LightEntityFeature.EFFECT
             self._attr_effect_list = list(FAN_LED_EFFECTS.keys())
 

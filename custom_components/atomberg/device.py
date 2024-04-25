@@ -11,6 +11,9 @@ from .api import AtombergCloudAPI
 
 _LOGGER = getLogger(__name__)
 
+SUPPORTED_BRIGHTNESS_CONTROL_SERIES = ["I1"]
+SUPPORTED_COLOR_EFFECT_SERIES = ["I1"]
+
 ATTR_IS_ONLINE = "is_online"
 ATTR_POWER = "power"
 ATTR_SPEED = "speed"
@@ -45,6 +48,16 @@ class AtombergDevice:
         self._api = api
         self._state: dict = data["state"]
         self._last_seen: int = None
+
+    @property
+    def supports_brightness_control(self):
+        """Check whether device supports brightness control."""
+        return self.series in SUPPORTED_BRIGHTNESS_CONTROL_SERIES
+
+    @property
+    def supports_color_effect(self):
+        """Check whether device supports color modes."""
+        return self.series in SUPPORTED_COLOR_EFFECT_SERIES
 
     @property
     def state(self) -> dict[str, Any]:
