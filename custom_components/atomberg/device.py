@@ -5,7 +5,6 @@ from logging import getLogger
 from typing import Any
 
 from homeassistant.components.light import ATTR_BRIGHTNESS
-from homeassistant.core import callback
 
 from .api import AtombergCloudAPI
 
@@ -94,8 +93,7 @@ class AtombergDevice:
         """Get last seen UTC timestamp."""
         return self._last_seen
 
-    @callback
-    def async_update_last_seen(self, __value: float):
+    def update_last_seen(self, __value: float):
         """Update last seen timestamp."""
         self._last_seen = __value
 
@@ -104,14 +102,14 @@ class AtombergDevice:
         cmd = {ATTR_POWER: True}
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: turned on", self.name)
-            self.async_update_state(cmd)
+            self.update_state(cmd)
 
     async def async_turn_off(self):
         """Turn off."""
         cmd = {ATTR_POWER: False}
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: turned off", self.name)
-            self.async_update_state(cmd)
+            self.update_state(cmd)
 
     async def async_set_speed(self, value: int):
         """Set speed."""
@@ -120,7 +118,7 @@ class AtombergDevice:
         cmd = {ATTR_SPEED: value}
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: set speed %d", self.name, value)
-            self.async_update_state(cmd)
+            self.update_state(cmd)
 
     async def async_send_light_command(self, cmd: dict):
         """Send combined light command."""
@@ -130,21 +128,21 @@ class AtombergDevice:
 
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: Light command executed successfully.", self.name)
-            self.async_update_state(cmd)
+            self.update_state(cmd)
 
     async def async_turn_on_sleep_mode(self):
         """Turn on sleep mode."""
         cmd = {ATTR_SLEEP: True}
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: turned on sleep mode", self.name)
-            self.async_update_state(cmd)
+            self.update_state(cmd)
 
     async def async_turn_off_sleep_mode(self):
         """Turn off sleep mode."""
         cmd = {ATTR_SLEEP: False}
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: turned off sleep mode", self.name)
-            self.async_update_state(cmd)
+            self.update_state(cmd)
 
     async def async_set_timer(self, value: int):
         """Set timer."""
@@ -152,9 +150,8 @@ class AtombergDevice:
             raise ValueError("Value must in range of 0-4.")
         if await self._api.async_send_command(self.id, {"timer": value}):
             _LOGGER.debug("%s: set sleep mode: %d", self.name, value)
-            self.async_update_state({ATTR_TIMER_HOURS: TIMER_MAPPING[value][0]})
+            self.update_state({ATTR_TIMER_HOURS: TIMER_MAPPING[value][0]})
 
-    @callback
-    def async_update_state(self, new_state: dict):
+    def update_state(self, new_state: dict):
         """Update states."""
         self._state.update(new_state)

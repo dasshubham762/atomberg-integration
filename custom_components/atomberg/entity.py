@@ -136,8 +136,8 @@ class AtombergEntity(CoordinatorEntity, Entity):
 
                 state[ATTR_LIGHT_MODE] = light_mode
 
-        self._device.async_update_state({**state, ATTR_IS_ONLINE: True})
-        self._device.async_update_last_seen(utcnow().timestamp())
+        self._device.update_state({**state, ATTR_IS_ONLINE: True})
+        self._device.update_last_seen(utcnow().timestamp())
         self.update_ha_state_if_required()
 
     def update_ha_state_if_required(self):
@@ -146,16 +146,17 @@ class AtombergEntity(CoordinatorEntity, Entity):
             self._attr_device_state = self._device.state
             self.async_schedule_update_ha_state()
 
+    @callback
     def _refresh_availability(self, now: datetime):
         """Update is_online state based on last_seen."""
-        if self._device.last_seen:
+        if self._device.last_seen and self.available:
             self._logger.debug(
                 "Refreshing availability of %s (%s) - (%s)",
                 self._device.name,
                 self._device.id,
                 self.name,
             )
-            self._device.async_update_state(
+            self._device.update_state(
                 {
                     ATTR_IS_ONLINE: now.timestamp() - self._device.last_seen
                     <= AVAILABILITY_TIMEOUT
