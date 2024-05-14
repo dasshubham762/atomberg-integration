@@ -103,7 +103,10 @@ class AtombergEntity(CoordinatorEntity, Entity):
         state = {}
         # Decode the state data
         if state_string := self.coordinator.data.get("state_string"):
-            value = int(state_string.split(",")[0])
+            value = state_string.split(",")[0].strip()
+            if not value.isnumeric():
+                return
+            value = int(value)
 
             state.update(
                 {
