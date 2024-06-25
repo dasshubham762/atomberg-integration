@@ -60,6 +60,7 @@
 
 - Please note that this integration is designed for the latest series of Atomberg fans and may not work with older models.
 - The integration relies on cloud APIs for communication with your Atomberg fans.
+- This integration uses UDP port `5625` for updating the fan state locally, make sure that port is not in use by any other application and that it is not blocked by any firewall.
 
 ## Contributions are welcome!
 
