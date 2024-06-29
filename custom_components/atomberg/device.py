@@ -24,7 +24,7 @@ ATTR_TIMER_TIME_ELAPSED_MINS = "timer_time_elapsed_mins"
 LIGHT_MODE_DAYLIGHT = "daylight"
 LIGHT_MODE_COOL = "cool"
 LIGHT_MODE_WARM = "warm"
-LED_BRIGHTNESS_SCALE = (10, 100)
+LED_BRIGHTNESS_SCALE = (1, 100)
 TIMER_MAPPING = [
     (0, "Off"),
     (1, "1 hour"),
