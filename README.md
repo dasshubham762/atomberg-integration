@@ -12,7 +12,8 @@
 *Integration for **[Atomberg smart fans](https://atomberg.com/atomberg-ceiling-fans?page=1&fan_sub_category%5Bfilter%5D=Smart+Fans%2C270)***
 
 ## Tested on
-- **[Atomberg Renesa+ Ceiling Fan](https://atomberg.com/atomberg-renesa-smart-iot-enabled-ceiling-fans-with-bldc-motor-and-remote?attribute_pa_color=Earth+Brown&attribute_pa_sweepsize=1200mm)**
+- **[Atomberg Renesa+ Ceiling Fan](https://atomberg.com/atomberg-renesa-smart-iot-enabled-ceiling-fans-with-bldc-motor-and-remote)**
+- **[Atomberg Aris Ceiling Fan](https://atomberg.com/aris-ceiling-fan)**
 
 ## Installation
 
