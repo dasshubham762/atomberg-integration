@@ -158,6 +158,7 @@ class AtombergCloudAPI:
 
     async def async_send_command(self, device_id: str, command: dict) -> bool:
         """Send command to a device."""
+        _LOGGER.debug("Sending command: '%s' to %s", command, device_id)
         payload = {"device_id": device_id, "command": command}
         resp = await self.async_make_request("/v1/send_command", "POST", body=payload)
         data = resp.json()

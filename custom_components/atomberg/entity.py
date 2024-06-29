@@ -114,16 +114,14 @@ class AtombergEntity(CoordinatorEntity, Entity):
                     ATTR_LED: (0x20) & value > 0,
                     ATTR_SLEEP: (0x80) & value > 0,
                     ATTR_SPEED: (0x07) & value,
-                    ATTR_TIMER_HOURS: round((0x0F0000 & value) >> 16),
-                    ATTR_TIMER_TIME_ELAPSED_MINS: round(
-                        (0xFF000000 & value) >> (24 - 2)
-                    ),
+                    ATTR_TIMER_HOURS: (0x0F0000 & value) >> 16,
+                    ATTR_TIMER_TIME_ELAPSED_MINS: (0xFF000000 & value) >> (24 - 2),
                 }
             )
 
             # Set brightness value if device supports brightness control
             if self._device.supports_brightness_control:
-                state[ATTR_BRIGHTNESS] = round(((0x7F00) & value) >> 8)
+                state[ATTR_BRIGHTNESS] = ((0x7F00) & value) >> 8
 
             # Set color mode if device supports color modes
             if self._device.supports_color_effect:
