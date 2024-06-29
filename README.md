@@ -9,7 +9,7 @@
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
-*Integration for **[Atomberg smart fans](https://atomberg.com/atomberg-ceiling-fans?page=1&fan_sub_category%5Bfilter%5D=Smart+Fans%2C270)***
+*Integration for **[Atomberg smart fans](https://atomberg.com/atomberg-ceiling-fans/smart-fans)***
 
 ## Tested on
 - **[Atomberg Renesa+ Ceiling Fan](https://atomberg.com/atomberg-renesa-smart-iot-enabled-ceiling-fans-with-bldc-motor-and-remote)**
