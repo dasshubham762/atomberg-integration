@@ -14,6 +14,7 @@
 ## Tested on
 - **[Atomberg Renesa+ Ceiling Fan](https://atomberg.com/atomberg-renesa-smart-iot-enabled-ceiling-fans-with-bldc-motor-and-remote)**
 - **[Atomberg Aris Ceiling Fan](https://atomberg.com/aris-ceiling-fan)**
+- **[Atomberg Erica Ceiling Fan](https://atomberg.com/erica-ceiling-fan)**
 
 ## Installation
 
