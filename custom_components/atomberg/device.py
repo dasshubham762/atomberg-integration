@@ -126,6 +126,9 @@ class AtombergDevice:
         if not set(cmd.keys()).issubset(supported_cmds):
             raise ValueError(f"Supported commands are: {', '.join(supported_cmds)}")
 
+        if len(cmd) > 1 and ATTR_LED in cmd:
+            del cmd[ATTR_LED]
+
         if await self._api.async_send_command(self.id, cmd):
             _LOGGER.debug("%s: Light command executed successfully.", self.name)
             self.update_state(cmd)
