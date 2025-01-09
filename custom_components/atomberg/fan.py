@@ -34,7 +34,11 @@ async def async_setup_entry(
 class AtombergFanEntity(AtombergEntity, FanEntity):
     """Atomberg Fan."""
 
-    _attr_supported_features = FanEntityFeature.SET_SPEED
+    _attr_supported_features = (
+        FanEntityFeature.TURN_ON
+        | FanEntityFeature.TURN_OFF
+        | FanEntityFeature.SET_SPEED
+    )
 
     def __init__(
         self,
