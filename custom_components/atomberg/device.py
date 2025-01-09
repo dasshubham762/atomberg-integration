@@ -93,9 +93,9 @@ class AtombergDevice:
         """Get last seen UTC timestamp."""
         return self._last_seen
 
-    def update_last_seen(self, __value: float):
+    def update_last_seen(self, value: float):
         """Update last seen timestamp."""
-        self._last_seen = __value
+        self._last_seen = value
 
     async def async_turn_on(self):
         """Turn on."""

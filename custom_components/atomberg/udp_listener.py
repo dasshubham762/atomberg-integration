@@ -34,9 +34,9 @@ class UDPListener(asyncio.DatagramProtocol):
         if self._callback:
             self._callback(msg_data)
 
-    def set_callback(self, __func):
+    def set_callback(self, callback):
         """Get callback when a message is received."""
-        self._callback = __func
+        self._callback = callback
 
     async def start(self):
         """Start listening."""
