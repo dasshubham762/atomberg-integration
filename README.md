@@ -22,16 +22,9 @@
 
 1. Open your Home Assistant UI.
 2. Go to "HACS" (Home Assistant Community Store).
-3. Click on "Integrations" from the top menu.
-4. Click the three dots in the upper right corner and select "Custom Repositories".
-5. Under "Add custom repository", enter:
-    - **URL:** `https://github.com/dasshubham762/atomberg-integration`
-    - **Category:** Integration
-6. Click "Add".
-7. Go back to the "Integrations" tab in HACS.
-8. Search for "Atomberg" in the search bar.
-9. You should see the Atomberg integration listed.
-10. Click "Install" and follow any prompts to complete the installation.
+3. Search for "Atomberg" in the search bar.
+4. You should see the Atomberg integration listed.
+5. Click "Install" and follow any prompts to complete the installation.
 
 ### Method 2: Manual Installation
 
