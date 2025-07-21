@@ -1,5 +1,7 @@
 """Device as wrapper for Atomberg Cloud APIs."""
 
+import json
+import socket
 from copy import deepcopy
 from logging import getLogger
 from typing import Any
@@ -47,6 +49,7 @@ class AtombergDevice:
         self._api = api
         self._state: dict = data["state"]
         self._last_seen: int = None
+        self._ip_addr: str = None
 
     @property
     def supports_brightness_control(self):
@@ -93,21 +96,57 @@ class AtombergDevice:
         """Get last seen UTC timestamp."""
         return self._last_seen
 
+    @property
+    def ip_address(self) -> str | None:
+        """Get IP address."""
+        return self._ip_addr
+
     def update_last_seen(self, value: float):
         """Update last seen timestamp."""
         self._last_seen = value
 
+    def update_ip_address(self, value: str):
+        """Update IP address."""
+        if self._ip_addr != value:
+            _LOGGER.debug("IP address updated for %s: %s", self.name, value)
+            self._ip_addr = value
+
+    async def async_send_command(self, command: dict) -> bool:
+        """Send command to the device."""
+        if self.ip_address:
+            message = json.dumps(command).encode()
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                sent_bytes = sock.sendto(message, (self.ip_address, 5600))
+                res = sent_bytes > 0
+                if res:
+                    _LOGGER.debug(
+                        "Command sent to %s (%s): %s",
+                        self.name,
+                        self.ip_address,
+                        command,
+                    )
+                else:
+                    _LOGGER.error(
+                        "Failed to send command to %s (%s): %s",
+                        self.name,
+                        self.ip_address,
+                        command,
+                    )
+                return res
+        else:
+            return self._api.async_send_command(self.id, command)
+
     async def async_turn_on(self):
         """Turn on."""
         cmd = {ATTR_POWER: True}
-        if await self._api.async_send_command(self.id, cmd):
+        if await self.async_send_command(cmd):
             _LOGGER.debug("%s: turned on", self.name)
             self.update_state(cmd)
 
     async def async_turn_off(self):
         """Turn off."""
         cmd = {ATTR_POWER: False}
-        if await self._api.async_send_command(self.id, cmd):
+        if await self.async_send_command(cmd):
             _LOGGER.debug("%s: turned off", self.name)
             self.update_state(cmd)
 
@@ -116,7 +155,7 @@ class AtombergDevice:
         if value not in range(1, 7):
             raise ValueError("Value must in range of 1-6.")
         cmd = {ATTR_SPEED: value}
-        if await self._api.async_send_command(self.id, cmd):
+        if await self.async_send_command(cmd):
             _LOGGER.debug("%s: set speed %d", self.name, value)
             self.update_state(cmd)
 
@@ -129,21 +168,21 @@ class AtombergDevice:
         if len(cmd) > 1 and ATTR_LED in cmd:
             del cmd[ATTR_LED]
 
-        if await self._api.async_send_command(self.id, cmd):
+        if await self.async_send_command(cmd):
             _LOGGER.debug("%s: Light command executed successfully.", self.name)
             self.update_state(cmd)
 
     async def async_turn_on_sleep_mode(self):
         """Turn on sleep mode."""
         cmd = {ATTR_SLEEP: True}
-        if await self._api.async_send_command(self.id, cmd):
+        if await self.async_send_command(cmd):
             _LOGGER.debug("%s: turned on sleep mode", self.name)
             self.update_state(cmd)
 
     async def async_turn_off_sleep_mode(self):
         """Turn off sleep mode."""
         cmd = {ATTR_SLEEP: False}
-        if await self._api.async_send_command(self.id, cmd):
+        if await self.async_send_command(cmd):
             _LOGGER.debug("%s: turned off sleep mode", self.name)
             self.update_state(cmd)
 

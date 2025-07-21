@@ -32,7 +32,7 @@ from .device import (
     AtombergDevice,
 )
 
-AVAILABILITY_TIMEOUT = 15  # Seconds
+AVAILABILITY_TIMEOUT = 10  # Seconds
 
 _EntityT = TypeVar("_EntityT", bound="AtombergEntity")
 
@@ -138,6 +138,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
                 state[ATTR_LIGHT_MODE] = light_mode
 
         self._device.update_state({**state, ATTR_IS_ONLINE: True})
+        self._device.update_ip_address(self.coordinator.data.get("ip_address"))
         self._device.update_last_seen(utcnow().timestamp())
         self.update_ha_state_if_required()
 
