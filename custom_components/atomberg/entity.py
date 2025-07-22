@@ -132,7 +132,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
                     light_mode = LIGHT_MODE_DAYLIGHT
                 elif cool:
                     light_mode = LIGHT_MODE_COOL
-                elif warm:
+                else:
                     light_mode = LIGHT_MODE_WARM
 
                 state[ATTR_LIGHT_MODE] = light_mode
@@ -172,7 +172,9 @@ class AtombergEntity(CoordinatorEntity, Entity):
 
         # Start availability refresher
         self._stop_availability_refresher = async_track_time_interval(
-            self.hass, self._refresh_availability, timedelta(seconds=30)
+            self.hass,
+            self._refresh_availability,
+            timedelta(seconds=AVAILABILITY_TIMEOUT),
         )
 
     async def async_will_remove_from_hass(self) -> None:

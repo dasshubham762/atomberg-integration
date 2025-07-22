@@ -15,5 +15,18 @@
       "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
       "unknown": "[%key:common::config_flow::error::unknown%]"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "[%key:common::options_flow::title%]",
+        "data": {
+          "use_cloud_control": "[%key:common::options_flow::data::use_cloud_control%]"
+        },
+        "data_description": {
+          "use_cloud_control": "[%key:common::options_flow::data_description::use_cloud_control%]"
+        }
+      }
+    }
   }
 }

@@ -15,5 +15,18 @@
       "invalid_auth": "Failed to authenticate with server.",
       "unknown": "An unknown error occurred. See log for details."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "use_cloud_control": "Use cloud control"
+        },
+        "data_description": {
+          "use_cloud_control": "When enabled, the integration will send control commands to the Atomberg cloud APIs instead of directly to the device."
+        }
+      }
+    }
   }
 }

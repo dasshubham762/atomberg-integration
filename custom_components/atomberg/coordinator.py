@@ -30,6 +30,6 @@ class AtombergDataUpdateCoordinator(DataUpdateCoordinator):
     def get_devices(self) -> list[AtombergDevice]:
         """Get list of available devices."""
         return [
-            AtombergDevice(data=data, api=self.api)
+            AtombergDevice(data=data, api=self.api, config_entry=self.config_entry)
             for data in self.api.device_list.values()
         ]

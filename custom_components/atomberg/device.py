@@ -7,8 +7,11 @@ from logging import getLogger
 from typing import Any
 
 from homeassistant.components.light import ATTR_BRIGHTNESS
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 
 from .api import AtombergCloudAPI
+from .const import CONF_USE_CLOUD_CONTROL
 
 _LOGGER = getLogger(__name__)
 
@@ -39,7 +42,12 @@ TIMER_MAPPING = [
 class AtombergDevice:
     """Atomberg device."""
 
-    def __init__(self, data: dict[str, Any], api: AtombergCloudAPI) -> None:
+    def __init__(
+        self,
+        data: dict[str, Any],
+        api: AtombergCloudAPI,
+        config_entry: ConfigEntry = None,
+    ) -> None:
         """Init Atomberg device."""
         self._device_id = data["device_id"]
         self._color = data["color"]
@@ -50,6 +58,13 @@ class AtombergDevice:
         self._state: dict = data["state"]
         self._last_seen: int = None
         self._ip_addr: str = None
+        self._options = config_entry.options if config_entry else {}
+
+        # Add options update listener
+        if config_entry:
+            config_entry.async_on_unload(
+                config_entry.add_update_listener(self._update_options)
+            )
 
     @property
     def supports_brightness_control(self):
@@ -111,9 +126,14 @@ class AtombergDevice:
             _LOGGER.debug("IP address updated for %s: %s", self.name, value)
             self._ip_addr = value
 
-    async def async_send_command(self, command: dict) -> bool:
+    async def _update_options(self, hass: HomeAssistant, config_entry: ConfigEntry):
+        """Update options."""
+        self._options = config_entry.options
+        _LOGGER.debug("Options updated for %s: %s", self.name, self._options)
+
+    async def _async_send_command(self, command: dict) -> bool:
         """Send command to the device."""
-        if self.ip_address:
+        if not self._options.get(CONF_USE_CLOUD_CONTROL, False) and self.ip_address:
             message = json.dumps(command).encode()
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
                 sent_bytes = sock.sendto(message, (self.ip_address, 5600))
@@ -134,19 +154,19 @@ class AtombergDevice:
                     )
                 return res
         else:
-            return self._api.async_send_command(self.id, command)
+            return await self._api.async_send_command(self.id, command)
 
     async def async_turn_on(self):
         """Turn on."""
         cmd = {ATTR_POWER: True}
-        if await self.async_send_command(cmd):
+        if await self._async_send_command(cmd):
             _LOGGER.debug("%s: turned on", self.name)
             self.update_state(cmd)
 
     async def async_turn_off(self):
         """Turn off."""
         cmd = {ATTR_POWER: False}
-        if await self.async_send_command(cmd):
+        if await self._async_send_command(cmd):
             _LOGGER.debug("%s: turned off", self.name)
             self.update_state(cmd)
 
@@ -155,7 +175,7 @@ class AtombergDevice:
         if value not in range(1, 7):
             raise ValueError("Value must in range of 1-6.")
         cmd = {ATTR_SPEED: value}
-        if await self.async_send_command(cmd):
+        if await self._async_send_command(cmd):
             _LOGGER.debug("%s: set speed %d", self.name, value)
             self.update_state(cmd)
 
@@ -168,21 +188,21 @@ class AtombergDevice:
         if len(cmd) > 1 and ATTR_LED in cmd:
             del cmd[ATTR_LED]
 
-        if await self.async_send_command(cmd):
+        if await self._async_send_command(cmd):
             _LOGGER.debug("%s: Light command executed successfully.", self.name)
             self.update_state(cmd)
 
     async def async_turn_on_sleep_mode(self):
         """Turn on sleep mode."""
         cmd = {ATTR_SLEEP: True}
-        if await self.async_send_command(cmd):
+        if await self._async_send_command(cmd):
             _LOGGER.debug("%s: turned on sleep mode", self.name)
             self.update_state(cmd)
 
     async def async_turn_off_sleep_mode(self):
         """Turn off sleep mode."""
         cmd = {ATTR_SLEEP: False}
-        if await self.async_send_command(cmd):
+        if await self._async_send_command(cmd):
             _LOGGER.debug("%s: turned off sleep mode", self.name)
             self.update_state(cmd)
 
