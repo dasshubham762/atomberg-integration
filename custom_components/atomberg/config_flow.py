@@ -19,12 +19,12 @@ _LOGGER = logging.getLogger(__name__)
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_API_KEY): cv.string,
-        vol.Required(CONF_REFRESH_TOKEN, default=False): cv.string,
+        vol.Required(CONF_REFRESH_TOKEN): cv.string,
     }
 )
 OPTIONS_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_USE_CLOUD_CONTROL): cv.boolean,
+        vol.Required(CONF_USE_CLOUD_CONTROL, default=False): cv.boolean,
     }
 )
 
