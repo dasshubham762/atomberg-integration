@@ -9,10 +9,9 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 
-from .api import AtombergCloudAPI
+from .api import AtombergCloudAPI, CannotConnect, InvalidAuth
 from .const import CONF_REFRESH_TOKEN, CONF_USE_CLOUD_CONTROL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,9 +34,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     refresh_token = data["refresh_token"]
 
     api = AtombergCloudAPI(hass, api_key, refresh_token)
-
-    if not await api.test_connection():
-        raise CannotConnect
+    await api.test_connection()
 
     title = "Atomberg Integration"
     if hass.data.get(DOMAIN):
@@ -96,11 +93,3 @@ class OptionsFlowHandler(OptionsFlow):
                 OPTIONS_SCHEMA, self.config_entry.options
             ),
         )
-
-
-class CannotConnect(HomeAssistantError):
-    """Error to indicate we cannot connect."""
-
-
-class InvalidAuth(HomeAssistantError):
-    """Error to indicate there is invalid auth."""

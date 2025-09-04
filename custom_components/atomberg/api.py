@@ -9,10 +9,13 @@ from typing import Literal
 import jwt
 import requests
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util.dt import utcnow
 from requests import Response
 
 _LOGGER = getLogger(__name__)
+
+SUPPORTED_SERIES = ["R1", "R2", "K1", "I1", "I2", "M1", "S1"]
 
 
 class AtombergCloudAPI:
@@ -29,10 +32,14 @@ class AtombergCloudAPI:
 
     async def test_connection(self):
         """Test API connection."""
-        if not await self.async_sync_list_of_devices():
+        try:
+            await self.async_sync_list_of_devices()
+        except KeyError as e:
+            _LOGGER.error("Atomberg Cloud authentication failed")
+            raise InvalidAuth("Failed to authenticate") from e
+        except Exception as e:
             _LOGGER.error("Atomberg Cloud connection test failed")
-            return False
-        return True
+            raise CannotConnect("Failed to connect") from e
 
     async def async_get_access_token(self):
         """Get access token."""
@@ -117,8 +124,16 @@ class AtombergCloudAPI:
         data = resp.json()
         status = False
         if data.get("status") == "Success":
-            states = await self.async_get_device_state()
-            for dev in data["message"]["devices_list"]:
+            supported_devices = list(
+                filter(
+                    lambda d: d["series"] in SUPPORTED_SERIES,
+                    data["message"]["devices_list"],
+                )
+            )
+            states = await self.async_get_device_state(
+                [d["device_id"] for d in supported_devices]
+            )
+            for dev in supported_devices:
                 state = next(
                     filter(lambda x: x["device_id"] == dev["device_id"], states)
                 )
@@ -133,16 +148,19 @@ class AtombergCloudAPI:
             )
         return status
 
-    async def async_get_device_state(self, device_id: str = "all") -> list[dict] | None:
+    async def async_get_device_state(
+        self, device_ids: list[str] | None = None
+    ) -> list[dict] | None:
         """Get state of all/single device(s)."""
-        resp = await self.async_make_request(
-            f"/v1/get_device_state?device_id={device_id}"
-        )
+        resp = await self.async_make_request("/v1/get_device_state?device_id=all")
 
         data = resp.json()
         if data["status"] == "Success":
             device_state = []
-            for state in deepcopy(data["message"]["device_state"]):
+            for state in filter(
+                lambda s: s["device_id"] in device_ids if device_ids else True,
+                deepcopy(data["message"]["device_state"]),
+            ):
                 # Keep is_online=False unless it's presense detected through udp broadcasts
                 state["is_online"] = False
                 # Rename some keys for ease of access
@@ -163,3 +181,11 @@ class AtombergCloudAPI:
         resp = await self.async_make_request("/v1/send_command", "POST", body=payload)
         data = resp.json()
         return data["status"] == "Success"
+
+
+class CannotConnect(HomeAssistantError):
+    """Error to indicate we cannot connect."""
+
+
+class InvalidAuth(HomeAssistantError):
+    """Error to indicate there is invalid auth."""

@@ -30,9 +30,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     # Test API connection
-    status = await api.test_connection()
-    if not status:
-        raise ConfigEntryNotReady("Failed to initialize Atomberg integration.")
+    try:
+        await api.test_connection()
+    except Exception as e:
+        raise ConfigEntryNotReady("Failed to initialize Atomberg integration.") from e
 
     udp_listener = UDPListener(hass)
     coordinator = AtombergDataUpdateCoordinator(
