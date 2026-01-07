@@ -15,7 +15,7 @@ from requests import Response
 
 _LOGGER = getLogger(__name__)
 
-SUPPORTED_SERIES = ["R1", "R2", "K1", "I1", "I2", "M1", "S1"]
+SUPPORTED_SERIES = ["R1", "R2", "K1", "I1", "I2", "I3", "M1", "S1"]
 
 
 class AtombergCloudAPI:
