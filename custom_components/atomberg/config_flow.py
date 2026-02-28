@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 
 from .api import AtombergCloudAPI, CannotConnect, InvalidAuth
-from .const import CONF_REFRESH_TOKEN, CONF_USE_CLOUD_CONTROL, DOMAIN
+from .const import CONF_REFRESH_TOKEN, CONF_USE_CLOUD_CONTROL, DOMAIN, ENTRIES
 
 _LOGGER = logging.getLogger(__name__)
 STEP_USER_DATA_SCHEMA = vol.Schema(
@@ -38,7 +38,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
     title = "Atomberg Integration"
     if hass.data.get(DOMAIN):
-        title += f" {len(hass.data[DOMAIN]) + 1}"
+        title += f" {len(hass.data[DOMAIN][ENTRIES]) + 1}"
 
     return {"title": title}
 

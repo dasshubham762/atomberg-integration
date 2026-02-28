@@ -20,16 +20,14 @@ class AtombergDataUpdateCoordinator(DataUpdateCoordinator):
         self, hass: HomeAssistant, api: AtombergCloudAPI, udp_listener: UDPListener
     ) -> None:
         """Init data update coordinator."""
-        self.api = api
-        self.udp_listener = udp_listener
         super().__init__(hass, _LOGGER, name=f"{MANUFACTURER} Coordinator")
 
-        # Set callback on udp listener
-        self.udp_listener.set_callback(self.async_set_updated_data)
-
-    def get_devices(self) -> list[AtombergDevice]:
-        """Get list of available devices."""
-        return [
+        self.api = api
+        self.udp_listener = udp_listener
+        self.devices = [
             AtombergDevice(data=data, api=self.api, config_entry=self.config_entry)
             for data in self.api.device_list.values()
         ]
+
+        # Add callback on udp listener
+        self.udp_listener.add_callback(self.config_entry, self.async_set_updated_data)

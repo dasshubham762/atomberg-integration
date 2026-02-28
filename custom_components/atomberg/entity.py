@@ -15,7 +15,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.dt import utcnow
 
-from .const import DOMAIN, MANUFACTURER
+from .const import DOMAIN, ENTRIES, MANUFACTURER
 from .coordinator import AtombergDataUpdateCoordinator
 from .device import (
     ATTR_BRIGHTNESS,
@@ -45,10 +45,12 @@ async def platform_async_setup_entry(
     entity_type: _EntityT,
 ) -> None:
     """Set up an Atomberg platform."""
-    coordinator: AtombergDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: AtombergDataUpdateCoordinator = hass.data[DOMAIN][ENTRIES][
+        entry.entry_id
+    ]
     async_add_entities(
         entity_type(coordinator=coordinator, device=device)
-        for device in coordinator.get_devices()
+        for device in coordinator.devices
     )
 
 

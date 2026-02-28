@@ -4,6 +4,7 @@ import asyncio
 import json
 from logging import getLogger
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 _LOGGER = getLogger(__name__)
@@ -17,7 +18,7 @@ class UDPListener(asyncio.DatagramProtocol):
         self.hass = hass
         self.devices = {}
         self._listener = None
-        self._callback = None
+        self._callbacks = {}
 
     def parse_datagram(self, data, addr) -> tuple[str, str]:
         """Decode and parse the data."""
@@ -45,12 +46,16 @@ class UDPListener(asyncio.DatagramProtocol):
         except ValueError:
             msg_data.update({"device_id": message.split("_")[0]})
 
-        if self._callback:
-            self._callback(msg_data)
+        for func in self._callbacks.values():
+            func(msg_data)
 
-    def set_callback(self, callback):
-        """Get callback when a message is received."""
-        self._callback = callback
+    def add_callback(self, entry: ConfigEntry, callback):
+        """Add a callback."""
+        self._callbacks[entry.entry_id] = callback
+
+    def remove_callback(self, entry: ConfigEntry):
+        """Remove a callback."""
+        self._callbacks.pop(entry.entry_id, None)
 
     async def start(self):
         """Start listening."""
@@ -63,6 +68,6 @@ class UDPListener(asyncio.DatagramProtocol):
     def close(self):
         """Close listener."""
         if self._listener:
-            self._callback = None
+            self._callbacks.clear()
             self._listener[0].close()
             _LOGGER.debug("Closed UDP listener on port 5625")
