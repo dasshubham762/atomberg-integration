@@ -7,6 +7,7 @@ from typing import TypeVar
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -68,6 +69,7 @@ class AtombergEntity(CoordinatorEntity, Entity):
         self._attr_device_state = self._device.state
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._get_unique_id())},
+            connections={(dr.CONNECTION_NETWORK_MAC, self._device.mac)},
             name=self._device.name,
             manufacturer=MANUFACTURER,
             model=self._device.model,

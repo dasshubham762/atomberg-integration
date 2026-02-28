@@ -9,6 +9,7 @@ from typing import Any
 from homeassistant.components.light import ATTR_BRIGHTNESS
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import format_mac
 
 from .api import AtombergCloudAPI
 from .const import CONF_USE_CLOUD_CONTROL
@@ -115,6 +116,11 @@ class AtombergDevice:
     def ip_address(self) -> str | None:
         """Get IP address."""
         return self._ip_addr
+
+    @property
+    def mac(self) -> str:
+        """Get MAC address."""
+        return format_mac(self.id)
 
     def update_last_seen(self, value: float):
         """Update last seen timestamp."""
