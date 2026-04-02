@@ -13,6 +13,7 @@ from homeassistant.util.percentage import (
     percentage_to_ordered_list_item,
 )
 
+from .const import CONF_CONTROL_METHOD, ControlMethod
 from .coordinator import AtombergDataUpdateCoordinator
 from .device import ATTR_POWER, ATTR_SPEED, AtombergDevice
 from .entity import AtombergEntity, platform_async_setup_entry
@@ -27,7 +28,13 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Automatically setup the fan entities from the devices list."""
+    """Set up fan entities — routes to IR or cloud implementation."""
+    if entry.data.get(CONF_CONTROL_METHOD) == ControlMethod.IR:
+        from .ir_fan import async_setup_entry as ir_async_setup_entry
+
+        await ir_async_setup_entry(hass, entry, async_add_entities)
+        return
+
     await platform_async_setup_entry(hass, entry, async_add_entities, AtombergFanEntity)
 
 
