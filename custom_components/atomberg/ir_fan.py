@@ -28,7 +28,7 @@ async def async_setup_entry(
 
 
 class AtombergIrFanEntity(AtombergIrEntity, FanEntity):
-    """Atomberg IR fan entity."""
+    """Atomberg IR fan entity with optimistic/assumed state management."""
 
     _attr_name = None
     _attr_supported_features = (
@@ -41,7 +41,10 @@ class AtombergIrFanEntity(AtombergIrEntity, FanEntity):
     def __init__(self, entry: ConfigEntry) -> None:
         """Initialize Atomberg IR fan entity."""
         super().__init__(entry, unique_id_suffix="ir_fan")
-        self._attr_is_on = False
+        # percentage=0 means off; FanEntity.is_on is derived from percentage > 0
+        self._attr_percentage = 0
+        # Tracks the last non-zero speed so Turn On can resume at it
+        self._last_on_percentage: int = round(100 / self._attr_speed_count)  # speed 1
 
     async def async_turn_on(
         self,
@@ -50,22 +53,19 @@ class AtombergIrFanEntity(AtombergIrEntity, FanEntity):
         **kwargs,
     ) -> None:
         """Turn on the fan."""
-        if not self._attr_is_on:
-            await self._send_command(AtombergIRCommand.POWER)
-            self._attr_is_on = True
-
+        await self._send_command(AtombergIRCommand.POWER)
         if percentage is not None:
             await self.async_set_percentage(percentage)
             return
-
+        # Resume at last known speed (defaults to speed 1 on first use)
+        self._attr_percentage = self._last_on_percentage
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
         """Turn off the fan."""
-        if self._attr_is_on:
-            await self._send_command(AtombergIRCommand.POWER)
-            self._attr_is_on = False
-            self.async_write_ha_state()
+        await self._send_command(AtombergIRCommand.POWER)
+        self._attr_percentage = 0
+        self.async_write_ha_state()
 
     async def async_set_percentage(self, percentage: int) -> None:
         """Set the speed percentage of the fan."""
@@ -73,12 +73,13 @@ class AtombergIrFanEntity(AtombergIrEntity, FanEntity):
             await self.async_turn_off()
             return
 
-        if not self._attr_is_on:
+        # If currently off, send power-on first
+        if self._attr_percentage == 0:
             await self._send_command(AtombergIRCommand.POWER)
-            self._attr_is_on = True
 
-        speed = math.ceil(percentage / 100 * self._attr_speed_count)
-        speed = max(1, min(speed, 6))
-
+        speed = max(1, min(6, math.ceil(percentage / 100 * self._attr_speed_count)))
         await self._send_command(SPEED_MAP[speed])
+
+        self._attr_percentage = percentage
+        self._last_on_percentage = percentage
         self.async_write_ha_state()
