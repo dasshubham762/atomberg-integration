@@ -54,8 +54,58 @@
 ## Compatibility and Requirements
 
 - Please note that this integration is designed for the latest series of Atomberg fans and may not work with older models.
-- The integration relies on cloud APIs for initialization.
+- The integration relies on cloud APIs for initialization (cloud control mode).
 - This integration uses UDP port `5625` for updating the fan state locally, make sure that port is not in use by any other application and that it is not blocked by any firewall.
+
+## Control Methods
+
+This integration supports two control methods. You choose which one to use during setup.
+
+### Cloud API Control
+
+Uses the Atomberg cloud APIs for fan control. Requires an `api_key` and `refresh_token` from the [Atomberg Developer Portal](https://developer.atomberg-iot.com/#overview). Provides full two-way state feedback (speed, power, light, etc.).
+
+### Infrared (IR) Control
+
+Uses an infrared transmitter to send NEC protocol commands directly to your Atomberg fan. No cloud credentials needed. Requires Home Assistant 2026.4.0 or later.
+
+#### Prerequisites
+
+1. **Home Assistant 2026.4.0+** — The integration depends on HA's built-in `infrared` entity platform.
+2. **An IR emitter device** — Any device that exposes an infrared transmitter entity to Home Assistant. Common options:
+   - **ESPHome IR proxy** — ESP32/ESP8266 with an IR LED, using the [`ir_rf_proxy`](https://esphome.io/components/ir_rf_proxy/) component.
+   - **Seeed XIAO IR Mate** — Dedicated IR blaster device.
+   - **Broadlink RM devices** — Via the Broadlink integration's infrared transmitter entities.
+
+#### Setup
+
+1. Ensure your IR emitter device is already set up in Home Assistant and appears as an infrared transmitter entity.
+2. Add the Atomberg integration and select **"Infrared (IR)"** as the control method.
+3. Select your fan model from the dropdown.
+4. Select the infrared transmitter entity to use.
+5. Position the IR emitter so it has line-of-sight to your Atomberg fan's IR receiver.
+
+#### Entities
+
+The IR setup creates the following entities:
+
+| Entity | Type | Description |
+|--------|------|-------------|
+| Fan | `fan` | On/off and speed control (6 speeds including boost) |
+| Boost | `button` | Activate boost mode (speed 6) |
+| LED | `button` | Toggle the fan's LED indicator |
+| Sleep Mode | `button` | Toggle sleep mode |
+| Timer | `button` | Toggle timer |
+| Timer 1 Hour | `button` | Set timer to 1 hour |
+| Timer 2 Hours | `button` | Set timer to 2 hours |
+| Timer 3 Hours | `button` | Set timer to 3 hours |
+| Timer 6 Hours | `button` | Set timer to 6 hours |
+
+#### Important Limitations
+
+- **One-way communication** — IR is transmit-only. The integration tracks assumed state internally but cannot detect if the fan is controlled by the physical remote. If you use the physical remote, resync the entity in Home Assistant by toggling it.
+- **Line of sight required** — The IR emitter must be able to "see" the fan's IR receiver. Obstructions will prevent commands from being received.
+- **NEC protocol** — Atomberg fans use NEC protocol with address `0xF300`. The IR codes are based on community-decoded values and are compatible with Gorilla Efficio, Renesa, Aris, Erica, and other Atomberg models.
 
 ## Contributions are welcome!
 

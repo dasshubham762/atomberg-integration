@@ -2,11 +2,30 @@
   "config": {
     "step": {
       "user": {
-        "title": "[%key:common::config_flow::title%]",
-        "description": "[%key:common::config_flow::description%]",
+        "title": "Choose Control Method",
+        "description": "Select how you want to control your Atomberg fan. Cloud control requires API credentials. IR control requires an infrared emitter device (e.g., ESPHome IR proxy).",
+        "data": {
+          "control_method": "Control method"
+        }
+      },
+      "cloud": {
+        "title": "Atomberg Cloud Configuration",
+        "description": "Input the credentials for Atomberg Cloud API.",
         "data": {
           "api_key": "[%key:common::config_flow::data::api_key%]",
           "refresh_token": "[%key:common::config_flow::data::refresh_token%]"
+        }
+      },
+      "ir": {
+        "title": "Atomberg IR Configuration",
+        "description": "Select your fan model and the infrared transmitter entity to use for controlling your Atomberg fan.",
+        "data": {
+          "fan_model": "Fan model",
+          "ir_emitter_entity": "Infrared transmitter"
+        },
+        "data_description": {
+          "fan_model": "The model of your Atomberg fan.",
+          "ir_emitter_entity": "The infrared transmitter entity to use for sending commands."
         }
       }
     },
@@ -14,6 +33,9 @@
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
       "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
       "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "no_ir_emitters": "No infrared transmitter entities found. Please set up an infrared device first (e.g., ESPHome IR proxy)."
     }
   },
   "options": {
@@ -26,6 +48,51 @@
         "data_description": {
           "use_cloud_control": "[%key:common::options_flow::data_description::use_cloud_control%]"
         }
+      }
+    }
+  },
+  "entity": {
+    "button": {
+      "boost": {
+        "name": "Boost"
+      },
+      "led": {
+        "name": "LED"
+      },
+      "sleep": {
+        "name": "Sleep Mode"
+      },
+      "timer": {
+        "name": "Timer"
+      },
+      "timer_1h": {
+        "name": "Timer 1 Hour"
+      },
+      "timer_2h": {
+        "name": "Timer 2 Hours"
+      },
+      "timer_3h": {
+        "name": "Timer 3 Hours"
+      },
+      "timer_6h": {
+        "name": "Timer 6 Hours"
+      }
+    }
+  },
+  "selector": {
+    "control_method": {
+      "options": {
+        "cloud": "Cloud API",
+        "ir": "Infrared (IR)"
+      }
+    },
+    "fan_model": {
+      "options": {
+        "renesa_plus": "Renesa+",
+        "aris": "Aris",
+        "erica": "Erica",
+        "gorilla_efficio": "Gorilla Efficio",
+        "generic": "Generic"
       }
     }
   }
