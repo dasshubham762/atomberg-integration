@@ -90,6 +90,11 @@ class AtombergIrFanEntity(AtombergIrEntity, FanEntity):
 
     async def async_set_percentage(self, percentage: int) -> None:
         """Set the speed percentage of the fan."""
+        # Efficio+ 400mm Pedestal has no discrete speed levels; SET_SPEED is not
+        # supported so this should never be called, but guard defensively.
+        if self._fan_model == FanModel.EFFICIO_PLUS_400MM_PEDESTAL:
+            return
+
         if percentage == 0:
             await self.async_turn_off()
             return
