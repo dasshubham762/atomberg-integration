@@ -43,3 +43,31 @@ def make_atomberg_command(command: int) -> InfraredCommand:
         command=command,
         modulation=ATOMBERG_IR_MODULATION,
     )
+
+
+# ---------------------------------------------------------------------------
+# Efficio+ 400mm Pedestal Swing Fan
+# Protocol: Samsung-style NEC variant (38 kHz, 4.5 ms + 4.5 ms header,
+# 16-bit frame sent twice without address inversion).
+# Codes decoded from Pronto hex captured in issue #52.
+# ---------------------------------------------------------------------------
+
+EFFICIO_PLUS_PEDESTAL_IR_ADDRESS = 0x0040
+
+
+class EfficioPlusPedestalIRCommand:
+    """NEC command codes for Atomberg Efficio+ 400mm Pedestal Swing Fan."""
+
+    POWER = 0x4A
+    TOGGLE_SPEED = 0xC4
+    SWING = 0x38
+    TIMER = 0x15
+
+
+def make_efficio_plus_pedestal_command(command: int) -> InfraredCommand:
+    """Create an InfraredCommand for the Efficio+ 400mm Pedestal Swing Fan."""
+    return NECCommand(
+        address=EFFICIO_PLUS_PEDESTAL_IR_ADDRESS,
+        command=command,
+        modulation=ATOMBERG_IR_MODULATION,
+    )

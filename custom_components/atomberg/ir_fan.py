@@ -10,7 +10,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .atomberg_ir_codes import SPEED_MAP, AtombergIRCommand
+from .atomberg_ir_codes import (
+    SPEED_MAP,
+    AtombergIRCommand,
+    EfficioPlusPedestalIRCommand,
+)
+from .const import FanModel
 from .ir_entity import AtombergIrEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,10 +46,20 @@ class AtombergIrFanEntity(AtombergIrEntity, FanEntity):
     def __init__(self, entry: ConfigEntry) -> None:
         """Initialize Atomberg IR fan entity."""
         super().__init__(entry, unique_id_suffix="ir_fan")
+
+        # Efficio+ 400mm Pedestal uses a toggle-speed remote with no discrete levels
+        if self._fan_model == FanModel.EFFICIO_PLUS_400MM_PEDESTAL:
+            self._attr_supported_features = (
+                FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
+            )
+            self._attr_speed_count = 0
+
         # percentage=0 means off; FanEntity.is_on is derived from percentage > 0
         self._attr_percentage = 0
         # Tracks the last non-zero speed so Turn On can resume at it
-        self._last_on_percentage: int = round(100 / self._attr_speed_count)  # speed 1
+        self._last_on_percentage: int = (
+            round(100 / self._attr_speed_count) if self._attr_speed_count else 100
+        )  # speed 1 (or 100% for toggle-only fans)
 
     async def async_turn_on(
         self,
@@ -53,17 +68,23 @@ class AtombergIrFanEntity(AtombergIrEntity, FanEntity):
         **kwargs,
     ) -> None:
         """Turn on the fan."""
-        await self._send_command(AtombergIRCommand.POWER)
-        if percentage is not None:
-            await self.async_set_percentage(percentage)
-            return
+        if self._fan_model == FanModel.EFFICIO_PLUS_400MM_PEDESTAL:
+            await self._send_command(EfficioPlusPedestalIRCommand.POWER)
+        else:
+            await self._send_command(AtombergIRCommand.POWER)
+            if percentage is not None:
+                await self.async_set_percentage(percentage)
+                return
         # Resume at last known speed (defaults to speed 1 on first use)
         self._attr_percentage = self._last_on_percentage
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
         """Turn off the fan."""
-        await self._send_command(AtombergIRCommand.POWER)
+        if self._fan_model == FanModel.EFFICIO_PLUS_400MM_PEDESTAL:
+            await self._send_command(EfficioPlusPedestalIRCommand.POWER)
+        else:
+            await self._send_command(AtombergIRCommand.POWER)
         self._attr_percentage = 0
         self.async_write_ha_state()
 
