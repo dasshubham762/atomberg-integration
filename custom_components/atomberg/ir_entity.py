@@ -12,13 +12,14 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import async_track_state_change_event
 
-from .atomberg_ir_codes import make_atomberg_command
+from .atomberg_ir_codes import make_atomberg_command, make_efficio_plus_pedestal_command
 from .const import (
     CONF_FAN_MODEL,
     CONF_IR_EMITTER_ENTITY,
     DOMAIN,
     FAN_MODEL_NAMES,
     MANUFACTURER,
+    FanModel,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,9 +35,9 @@ class AtombergIrEntity(Entity):
         """Initialize Atomberg IR entity."""
         self._infrared_entity_id = entry.data[CONF_IR_EMITTER_ENTITY]
         self._attr_unique_id = f"{entry.entry_id}_{unique_id_suffix}"
+        self._fan_model: str = entry.data.get(CONF_FAN_MODEL, FanModel.GENERIC)
 
-        fan_model = entry.data.get(CONF_FAN_MODEL, "generic")
-        model_name = FAN_MODEL_NAMES.get(fan_model, "Atomberg Fan")
+        model_name = FAN_MODEL_NAMES.get(self._fan_model, "Atomberg Fan")
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
@@ -79,7 +80,10 @@ class AtombergIrEntity(Entity):
 
     async def _send_command(self, command_code: int) -> None:
         """Send an IR command to the Atomberg fan."""
-        ir_command = make_atomberg_command(command_code)
+        if self._fan_model == FanModel.EFFICIO_PLUS_400MM_PEDESTAL:
+            ir_command = make_efficio_plus_pedestal_command(command_code)
+        else:
+            ir_command = make_atomberg_command(command_code)
         await async_send_command(
             self.hass,
             self._infrared_entity_id,
