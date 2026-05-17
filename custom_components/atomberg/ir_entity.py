@@ -37,8 +37,7 @@ class AtombergIrEntity(Entity):
         self._attr_unique_id = f"{entry.entry_id}_{unique_id_suffix}"
         self._fan_model: str = entry.data.get(CONF_FAN_MODEL, FanModel.GENERIC)
 
-        fan_model = entry.data.get(CONF_FAN_MODEL, "generic")
-        model_name = FAN_MODEL_NAMES.get(fan_model, "Atomberg Fan")
+        model_name = FAN_MODEL_NAMES.get(self._fan_model, "Atomberg Fan")
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
