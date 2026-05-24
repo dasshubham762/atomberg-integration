@@ -141,7 +141,6 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_ir(self, user_input: dict[str, Any] | None = None) -> Any:
         """Handle IR setup."""
-
         emitter_entity_ids = async_get_emitters(self.hass)
         if not emitter_entity_ids:
             return self.async_abort(reason="no_ir_emitters")
