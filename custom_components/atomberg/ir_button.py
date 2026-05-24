@@ -9,7 +9,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .atomberg_ir_codes import AtombergIRCommand
+from .atomberg_ir_codes import AtombergIRCommand, EfficioPlusPedestalIRCommand
+from .const import CONF_FAN_MODEL, FanModel
 from .ir_entity import AtombergIrEntity
 
 PARALLEL_UPDATES = 1
@@ -65,6 +66,26 @@ BUTTON_DESCRIPTIONS: tuple[AtombergIrButtonDescription, ...] = (
     ),
 )
 
+# Buttons available on the Efficio+ 400mm Pedestal Swing Fan remote
+# (4-button remote: Power + Toggle Speed handled by ir_fan; Swing + Timer as buttons)
+EFFICIO_PLUS_PEDESTAL_BUTTON_DESCRIPTIONS: tuple[AtombergIrButtonDescription, ...] = (
+    AtombergIrButtonDescription(
+        key="toggle_speed",
+        translation_key="toggle_speed",
+        command_code=EfficioPlusPedestalIRCommand.TOGGLE_SPEED,
+    ),
+    AtombergIrButtonDescription(
+        key="swing",
+        translation_key="swing",
+        command_code=EfficioPlusPedestalIRCommand.SWING,
+    ),
+    AtombergIrButtonDescription(
+        key="timer",
+        translation_key="timer",
+        command_code=EfficioPlusPedestalIRCommand.TIMER,
+    ),
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -72,8 +93,14 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up Atomberg IR buttons from config entry."""
+    fan_model = entry.data.get(CONF_FAN_MODEL, "generic")
+    if fan_model == FanModel.EFFICIO_PLUS_400MM_PEDESTAL:
+        descriptions = EFFICIO_PLUS_PEDESTAL_BUTTON_DESCRIPTIONS
+    else:
+        descriptions = BUTTON_DESCRIPTIONS
+
     async_add_entities(
-        AtombergIrButton(entry, description) for description in BUTTON_DESCRIPTIONS
+        AtombergIrButton(entry, description) for description in descriptions
     )
 
 

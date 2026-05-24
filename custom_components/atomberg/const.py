@@ -29,6 +29,7 @@ class FanModel(StrEnum):
     ARIS = "aris"
     ERICA = "erica"
     GORILLA_EFFICIO = "gorilla_efficio"
+    EFFICIO_PLUS_400MM_PEDESTAL = "efficio_plus_400mm_pedestal"
     GENERIC = "generic"
 
 
@@ -37,5 +38,6 @@ FAN_MODEL_NAMES = {
     FanModel.ARIS: "Aris",
     FanModel.ERICA: "Erica",
     FanModel.GORILLA_EFFICIO: "Gorilla Efficio",
+    FanModel.EFFICIO_PLUS_400MM_PEDESTAL: "Efficio+ 400mm Pedestal",
     FanModel.GENERIC: "Generic",
 }

@@ -76,6 +76,12 @@
       },
       "timer_6h": {
         "name": "Timer 6 Hours"
+      },
+      "toggle_speed": {
+        "name": "Toggle Speed"
+      },
+      "swing": {
+        "name": "Swing"
       }
     }
   },
@@ -92,6 +98,7 @@
         "aris": "Aris",
         "erica": "Erica",
         "gorilla_efficio": "Gorilla Efficio",
+        "efficio_plus_400mm_pedestal": "Efficio+ 400mm Pedestal",
         "generic": "Generic"
       }
     }
