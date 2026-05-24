@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-import importlib
 import logging
 from typing import Any
 
 import voluptuous as vol
+from homeassistant.components.infrared import (
+    DOMAIN as INFRARED_DOMAIN,
+)
+from homeassistant.components.infrared import (
+    async_get_emitters,
+)
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant, callback
@@ -136,12 +141,6 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_ir(self, user_input: dict[str, Any] | None = None) -> Any:
         """Handle IR setup."""
-        try:
-            infrared = importlib.import_module("homeassistant.components.infrared")
-            INFRARED_DOMAIN = infrared.DOMAIN
-            async_get_emitters = infrared.async_get_emitters
-        except ModuleNotFoundError:
-            return self.async_abort(reason="no_ir_emitters")
 
         emitter_entity_ids = async_get_emitters(self.hass)
         if not emitter_entity_ids:
