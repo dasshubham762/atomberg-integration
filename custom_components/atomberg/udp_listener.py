@@ -7,6 +7,8 @@ from logging import getLogger
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
+DISCOVERY_CALLBACK_KEY = "_discovery"
+
 _LOGGER = getLogger(__name__)
 
 
@@ -33,6 +35,23 @@ class UDPListener(asyncio.DatagramProtocol):
 
         return message, addr[0]
 
+    @staticmethod
+    def _extract_device_details(device_id_field: str) -> dict[str, str]:
+        """Extract device_id and optional series from raw device identifier.
+
+        Some UDP payloads publish identifiers in the form `<device_id>_<series>`
+        such as `<device_id>_R1`.
+        """
+        device_id_raw = device_id_field.strip()
+        if not device_id_raw:
+            return {}
+
+        parts = device_id_raw.split("_", 1)
+        details = {"device_id": parts[0]}
+        if len(parts) > 1 and parts[1].strip():
+            details["device_series"] = parts[1].strip().upper()
+        return details
+
     def datagram_received(self, data, addr):
         """Decode data when broadcast received."""
         message, ip_addr = self.parse_datagram(data, addr)
@@ -44,18 +63,24 @@ class UDPListener(asyncio.DatagramProtocol):
             msg_data_bytes = bytes.fromhex(message)
             msg_data.update(json.loads(msg_data_bytes))
         except ValueError:
-            msg_data.update({"device_id": message.split("_")[0]})
+            msg_data.update(self._extract_device_details(message))
+
+        # Normalize device metadata from any payload form.
+        if device_id_field := msg_data.get("device_id"):
+            msg_data.update(self._extract_device_details(device_id_field))
 
         for func in self._callbacks.values():
             func(msg_data)
 
-    def add_callback(self, entry: ConfigEntry, callback):
-        """Add a callback."""
-        self._callbacks[entry.entry_id] = callback
+    def add_callback(self, key: str | ConfigEntry, callback):
+        """Add a callback keyed by entry_id or an arbitrary string."""
+        key_str = key if isinstance(key, str) else key.entry_id
+        self._callbacks[key_str] = callback
 
-    def remove_callback(self, entry: ConfigEntry):
-        """Remove a callback."""
-        self._callbacks.pop(entry.entry_id, None)
+    def remove_callback(self, key: str | ConfigEntry):
+        """Remove a callback keyed by entry_id or an arbitrary string."""
+        key_str = key if isinstance(key, str) else key.entry_id
+        self._callbacks.pop(key_str, None)
 
     async def start(self):
         """Start listening."""

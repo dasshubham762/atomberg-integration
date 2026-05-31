@@ -2,31 +2,41 @@
   "config": {
     "step": {
       "user": {
-        "title": "Choose Control Method",
-        "description": "Select how you want to control your Atomberg fan. Cloud control requires API credentials. IR control requires an infrared emitter device (e.g., ESPHome IR proxy).",
+        "title": "Choose Setup Type",
+        "description": "Choose how to set up Atomberg. Local Discovery listens for fans on your network and prompts you to add each discovered fan. Cloud uses Atomberg API credentials. IR uses an infrared emitter device (for example, ESPHome IR proxy).",
         "data": {
-          "control_method": "Control method"
+          "control_method": "Setup type"
         }
       },
       "cloud": {
-        "title": "Atomberg Cloud Configuration",
-        "description": "Input the credentials for Atomberg Cloud API.",
+        "title": "Set Up Atomberg Cloud",
+        "description": "Enter your Atomberg Cloud API credentials.",
         "data": {
           "api_key": "API key",
           "refresh_token": "Refresh token"
         }
       },
       "ir": {
-        "title": "Atomberg IR Configuration",
-        "description": "Select your fan model and the infrared transmitter entity to use for controlling your Atomberg fan.",
+        "title": "Set Up IR Control",
+        "description": "Select your fan model and the infrared transmitter entity used to control your Atomberg fan.",
         "data": {
           "fan_model": "Fan model",
           "ir_emitter_entity": "Infrared transmitter"
         },
         "data_description": {
           "fan_model": "The model of your Atomberg fan.",
-          "ir_emitter_entity": "The infrared transmitter entity to use for sending commands."
+          "ir_emitter_entity": "The infrared transmitter entity used to send commands."
         }
+      },
+      "local_discovery": {
+        "title": "Enable Local Discovery",
+        "description": "Start local UDP discovery for Atomberg fans on your network. When a fan is discovered, you will be prompted to confirm adding it.",
+        "data": {}
+      },
+      "local_confirm": {
+        "title": "Add Discovered Atomberg Fan",
+        "description": "Discovered an Atomberg fan with device ID `{device_id}` at IP address {ip_address}. It will be added as `{display_name}`.",
+        "data": {}
       }
     },
     "error": {
@@ -35,10 +45,13 @@
       "unknown": "An unknown error occurred. See log for details."
     },
     "abort": {
-      "no_ir_emitters": "No infrared transmitter entities found. Please set up an infrared device first (e.g., ESPHome IR proxy)."
+      "no_ir_emitters": "No infrared transmitter entities found. Set up an infrared device first (for example, ESPHome IR proxy)."
     }
   },
   "options": {
+    "abort": {
+      "not_supported_for_entry": "No configurable options are available for this entry."
+    },
     "step": {
       "init": {
         "title": "Options",
@@ -88,8 +101,10 @@
   "selector": {
     "control_method": {
       "options": {
+        "local_discovery": "Local Discovery (UDP)",
         "cloud": "Cloud API",
-        "ir": "Infrared (IR)"
+        "ir": "Infrared (IR)",
+        "local_udp": "Local UDP Device"
       }
     },
     "fan_model": {

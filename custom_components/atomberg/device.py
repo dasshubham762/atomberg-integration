@@ -1,4 +1,4 @@
-"""Device as wrapper for Atomberg Cloud APIs."""
+"""Device wrapper for Atomberg fans (cloud and local UDP modes)."""
 
 import json
 import socket
@@ -12,12 +12,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import format_mac
 
 from .api import AtombergCloudAPI
-from .const import CONF_USE_CLOUD_CONTROL
+from .const import CONF_USE_CLOUD_CONTROL, UNKNOWN_SERIES
 
 _LOGGER = getLogger(__name__)
 
-SUPPORTED_BRIGHTNESS_CONTROL_SERIES = ["I1", "M1", "S1", "S2"]
-SUPPORTED_COLOR_EFFECT_SERIES = ["I1"]
+SUPPORTED_BRIGHTNESS_CONTROL_SERIES = ["I1", "M1", "S1", "S2", UNKNOWN_SERIES]
+SUPPORTED_COLOR_EFFECT_SERIES = ["I1", UNKNOWN_SERIES]
 
 ATTR_IS_ONLINE = "is_online"
 ATTR_POWER = "power"
@@ -46,19 +46,19 @@ class AtombergDevice:
     def __init__(
         self,
         data: dict[str, Any],
-        api: AtombergCloudAPI,
+        api: AtombergCloudAPI | None,
         config_entry: ConfigEntry = None,
     ) -> None:
         """Init Atomberg device."""
         self._device_id = data["device_id"]
-        self._color = data["color"]
-        self._series = data["series"]
-        self._model = data["model"]
+        self._color = data.get("color")
+        self._series = data.get("series", UNKNOWN_SERIES)
+        self._model = data.get("model", "Atomberg Fan")
         self._name = data["name"]
         self._api = api
-        self._state: dict = data["state"]
+        self._state: dict = data.get("state", {})
         self._last_seen: int = None
-        self._ip_addr: str = None
+        self._ip_addr: str = data.get("ip_address")
         self._options = config_entry.options if config_entry else {}
 
         # Add options update listener
@@ -70,12 +70,12 @@ class AtombergDevice:
     @property
     def supports_brightness_control(self):
         """Check whether device supports brightness control."""
-        return self.series in SUPPORTED_BRIGHTNESS_CONTROL_SERIES
+        return self._series in SUPPORTED_BRIGHTNESS_CONTROL_SERIES
 
     @property
     def supports_color_effect(self):
         """Check whether device supports color modes."""
-        return self.series in SUPPORTED_COLOR_EFFECT_SERIES
+        return self._series in SUPPORTED_COLOR_EFFECT_SERIES
 
     @property
     def state(self) -> dict[str, Any]:
@@ -139,28 +139,49 @@ class AtombergDevice:
 
     async def _async_send_command(self, command: dict) -> bool:
         """Send command to the device."""
-        if not self._options.get(CONF_USE_CLOUD_CONTROL, False) and self.ip_address:
-            message = json.dumps(command).encode()
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-                sent_bytes = sock.sendto(message, (self.ip_address, 5600))
-                res = sent_bytes > 0
-                if res:
-                    _LOGGER.debug(
-                        "Command sent to %s (%s): %s",
-                        self.name,
-                        self.ip_address,
-                        command,
-                    )
-                else:
-                    _LOGGER.error(
-                        "Failed to send command to %s (%s): %s",
-                        self.name,
-                        self.ip_address,
-                        command,
-                    )
-                return res
+        if self._api is None:
+            # Local-only mode — UDP is the only transport.
+            if not self.ip_address:
+                _LOGGER.warning(
+                    "No IP address known for %s yet; command dropped. "
+                    "Waiting for the device to broadcast.",
+                    self.name,
+                )
+                return False
+        elif not self._options.get(CONF_USE_CLOUD_CONTROL, False) and self.ip_address:
+            # Cloud mode with local preference: use UDP when IP is known.
+            pass
         else:
+            # Cloud mode (no local IP or cloud control forced).
             return await self._api.async_send_command(self.id, command)
+
+        # UDP send path (local mode or cloud-with-local-preference).
+        message = json.dumps(command).encode()
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sent_bytes = sock.sendto(message, (self.ip_address, 5600))
+            res = sent_bytes > 0
+            if res:
+                _LOGGER.debug(
+                    "Command sent to %s (%s): %s",
+                    self.name,
+                    self.ip_address,
+                    command,
+                )
+            else:
+                _LOGGER.error(
+                    "Failed to send command to %s (%s): %s",
+                    self.name,
+                    self.ip_address,
+                    command,
+                )
+            return res
+
+    async def async_request_state_refresh(self) -> bool:
+        """Trigger a no-op command that makes the fan broadcast current state.
+
+        Sending {"speedDelta": 0} does not modify state but prompts a fresh state broadcast from the device.
+        """
+        return await self._async_send_command({"speedDelta": 0})
 
     async def async_turn_on(self):
         """Turn on."""
@@ -216,8 +237,8 @@ class AtombergDevice:
         """Set timer."""
         if value not in range(5):
             raise ValueError("Value must in range of 0-4.")
-        if await self._api.async_send_command(self.id, {"timer": value}):
-            _LOGGER.debug("%s: set sleep mode: %d", self.name, value)
+        if await self._async_send_command({"timer": value}):
+            _LOGGER.debug("%s: set timer: %d", self.name, value)
             self.update_state({ATTR_TIMER_HOURS: TIMER_MAPPING[value][0]})
 
     def update_state(self, new_state: dict):
