@@ -15,7 +15,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.dt import utcnow
 
-from .const import DOMAIN, ENTRIES, MANUFACTURER
+from .const import CONF_IP_ADDRESS, DOMAIN, ENTRIES, MANUFACTURER
 from .coordinator import AtombergDataUpdateCoordinator
 from .device import (
     ATTR_BRIGHTNESS,
@@ -104,9 +104,11 @@ class AtombergEntity(CoordinatorEntity, Entity):
         if self.coordinator.data["device_id"] != self._device.id:
             return
 
+        was_available = self.available
+        state_string = self.coordinator.data.get("state_string")
         state = {}
         # Decode the state data
-        if state_string := self.coordinator.data.get("state_string"):
+        if state_string:
             value = state_string.split(",")[0].strip()
             if not value.isnumeric():
                 return
@@ -142,7 +144,9 @@ class AtombergEntity(CoordinatorEntity, Entity):
                 state[ATTR_LIGHT_MODE] = light_mode
 
         self._device.update_state({**state, ATTR_IS_ONLINE: True})
-        self._device.update_ip_address(self.coordinator.data.get("ip_address"))
+        self._device.update_ip_address(self.coordinator.data.get(CONF_IP_ADDRESS))
+        if not was_available and not state_string:
+            self.hass.async_create_task(self._device.async_request_state_refresh())
         self._device.update_last_seen(utcnow().timestamp())
         self.update_ha_state_if_required()
 

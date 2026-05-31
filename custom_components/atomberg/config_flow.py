@@ -12,7 +12,11 @@ from homeassistant.components.infrared import (
 from homeassistant.components.infrared import (
     async_get_emitters,
 )
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    OptionsFlow,
+)
 from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
@@ -28,7 +32,11 @@ from homeassistant.helpers.selector import (
 from .api import AtombergCloudAPI, CannotConnect, InvalidAuth
 from .const import (
     CONF_CONTROL_METHOD,
+    CONF_DEVICE_ID,
+    CONF_DEVICE_SERIES,
+    CONF_DISPLAY_NAME,
     CONF_FAN_MODEL,
+    CONF_IP_ADDRESS,
     CONF_IR_EMITTER_ENTITY,
     CONF_REFRESH_TOKEN,
     CONF_USE_CLOUD_CONTROL,
@@ -77,6 +85,11 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    def __init__(self) -> None:
+        """Init config flow."""
+        super().__init__()
+        self._discovery_info: dict[str, Any] = {}
+
     @staticmethod
     @callback
     def async_get_options_flow(
@@ -91,7 +104,9 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
             control_method = user_input[CONF_CONTROL_METHOD]
             if control_method == ControlMethod.CLOUD:
                 return await self.async_step_cloud()
-            return await self.async_step_ir()
+            if control_method == ControlMethod.IR:
+                return await self.async_step_ir()
+            return await self.async_step_local_discovery()
 
         return self.async_show_form(
             step_id="user",
@@ -100,6 +115,7 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_CONTROL_METHOD): SelectSelector(
                         SelectSelectorConfig(
                             options=[
+                                ControlMethod.LOCAL_DISCOVERY.value,
                                 ControlMethod.CLOUD.value,
                                 ControlMethod.IR.value,
                             ],
@@ -137,6 +153,19 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="cloud",
             data_schema=CLOUD_DATA_SCHEMA,
             errors=errors,
+        )
+
+    async def async_step_local_discovery(
+        self, user_input: dict[str, Any] | None = None
+    ) -> Any:
+        """Handle local discovery bootstrap setup."""
+        await self.async_set_unique_id("atomberg_local_discovery")
+        self._abort_if_unique_id_configured()
+        return self.async_create_entry(
+            title="Atomberg Local Discovery",
+            data={
+                CONF_CONTROL_METHOD: ControlMethod.LOCAL_DISCOVERY,
+            },
         )
 
     async def async_step_ir(self, user_input: dict[str, Any] | None = None) -> Any:
@@ -189,6 +218,48 @@ class ConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
         )
 
+    async def async_step_integration_discovery(
+        self, discovery_info: dict[str, Any]
+    ) -> Any:
+        """Handle a device discovered via UDP broadcast."""
+        device_id = discovery_info[CONF_DEVICE_ID]
+
+        await self.async_set_unique_id(f"atomberg_local_{device_id}")
+        self._abort_if_unique_id_configured()
+
+        self._discovery_info = discovery_info
+        return await self.async_step_local_confirm()
+
+    async def async_step_local_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> Any:
+        """Confirm adding a locally-discovered device."""
+        device_id = self._discovery_info[CONF_DEVICE_ID]
+        device_series = self._discovery_info.get(CONF_DEVICE_SERIES)
+        ip_address = self._discovery_info.get(CONF_IP_ADDRESS, "")
+        display_name = f"Atomberg Fan {device_id[-4:].upper()}"
+
+        if user_input is not None:
+            return self.async_create_entry(
+                title=display_name,
+                data={
+                    CONF_CONTROL_METHOD: ControlMethod.LOCAL_UDP,
+                    CONF_DEVICE_ID: device_id,
+                    CONF_DEVICE_SERIES: device_series,
+                    CONF_DISPLAY_NAME: display_name,
+                },
+            )
+
+        return self.async_show_form(
+            step_id="local_confirm",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "device_id": device_id,
+                "ip_address": ip_address or "unknown",
+                "display_name": display_name,
+            },
+        )
+
 
 class OptionsFlowHandler(OptionsFlow):
     """Handle options flow for Atomberg."""
@@ -197,6 +268,12 @@ class OptionsFlowHandler(OptionsFlow):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         """Manage the options."""
+        if not (
+            self.config_entry.data.get(CONF_API_KEY)
+            and self.config_entry.data.get(CONF_REFRESH_TOKEN)
+        ):
+            return self.async_abort(reason="not_supported_for_entry")
+
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
