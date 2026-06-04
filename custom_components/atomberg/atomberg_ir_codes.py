@@ -1,7 +1,7 @@
 """Atomberg IR NEC command definitions."""
 
-from infrared_protocols import Command as InfraredCommand
-from infrared_protocols import NECCommand
+from infrared_protocols.commands import Command as InfraredCommand
+from infrared_protocols.commands.nec import NECCommand
 
 ATOMBERG_IR_ADDRESS = 0xF300
 ATOMBERG_IR_MODULATION = 38000
