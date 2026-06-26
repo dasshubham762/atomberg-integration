@@ -33,7 +33,6 @@ class-const-naming-style = "any"
 disable = [
     "format",
     "abstract-method",
-    "cyclic-import",
     "duplicate-code",
     "inconsistent-return-statements",
     "locally-disabled",
@@ -46,7 +45,6 @@ disable = [
     "too-many-locals",
     "too-many-public-methods",
     "too-many-boolean-expressions",
-    "wrong-import-order",
     "consider-using-f-string",
     "consider-using-namedtuple-or-dataclass",
     "consider-using-assignment-expr",
@@ -113,14 +111,12 @@ disable = [
     # "global-statement", # PLW0603, ruff catches new occurrences, needs more work
     "global-variable-not-assigned", # PLW0602
     "implicit-str-concat", # ISC001
-    "import-self", # PLW0406
     "inconsistent-quotes", # Q000
     "invalid-envvar-default", # PLW1508
     "keyword-arg-before-vararg", # B026
     "logging-format-interpolation", # G
     "logging-fstring-interpolation", # G
     "logging-not-lazy", # G
-    "misplaced-future", # F404
     "named-expr-without-context", # PLW0131
     "nested-min-max", # PLW3301
     "pointless-statement", # B018
@@ -133,7 +129,6 @@ disable = [
     "unused-import", # F401
     "unused-variable", # F841
     "useless-else-on-loop", # PLW0120
-    "wildcard-import", # F403
     "bad-classmethod-argument", # N804
     "consider-iterating-dictionary", # SIM118
     "empty-docstring", # D419
@@ -143,19 +138,14 @@ disable = [
     "missing-final-newline", # W292
     "missing-function-docstring", # D103
     "missing-module-docstring", # D100
-    "multiple-imports", #E401
     "singleton-comparison", # E711, E712
     "subprocess-run-check", # PLW1510
     "superfluous-parens", # UP034
-    "ungrouped-imports", # I001
     "unidiomatic-typecheck", # E721
     "unnecessary-direct-lambda-call", # PLC3002
     "unnecessary-lambda-assignment", # PLC3001
     "unnecessary-pass", # PIE790
     "unneeded-not", # SIM208
-    "useless-import-alias", # PLC0414
-    "wrong-import-order", # I001
-    "wrong-import-position", # E402
     "comparison-of-constants", # PLR0133
     "comparison-with-itself", # PLR0124
     "consider-alternative-union-syntax", # UP007
@@ -204,7 +194,6 @@ disable = [
     "dict-iter-missing-items",
     "format-combined-specification",
     "global-variable-undefined",
-    "import-error",
     "inconsistent-mro",
     "inherit-non-class",
     "init-is-generator",
@@ -244,7 +233,6 @@ disable = [
     "raising-bad-type",
     "raising-non-exception",
     "redundant-keyword-arg",
-    "relative-beyond-top-level",
     "self-cls-assignment",
     "signature-differs",
     "star-needs-assignment-target",
