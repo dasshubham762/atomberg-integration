@@ -5,6 +5,7 @@ from typing import Any
 
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
+    ATTR_COLOR_TEMP_KELVIN,
     ATTR_EFFECT,
     ColorMode,
     LightEntity,
@@ -36,6 +37,26 @@ FAN_LED_EFFECTS = {
     LIGHT_MODE_WARM.title(): LIGHT_MODE_WARM,
 }
 
+# The fan LED supports 3 discrete color temperatures (warm, daylight and cool).
+# Expose them on a full kelvin scale so that a color temperature selector shows
+# up in the UI (and in HomeKit/Google Home via the respective bridges), and snap
+# any requested value to the nearest mode supported by the device.
+LIGHT_MODE_TO_KELVIN = {
+    LIGHT_MODE_WARM: 2700,
+    LIGHT_MODE_DAYLIGHT: 4000,
+    LIGHT_MODE_COOL: 6500,
+}
+MIN_COLOR_TEMP_KELVIN = min(LIGHT_MODE_TO_KELVIN.values())
+MAX_COLOR_TEMP_KELVIN = max(LIGHT_MODE_TO_KELVIN.values())
+
+
+def kelvin_to_light_mode(kelvin: int) -> str:
+    """Snap a kelvin value to the nearest light mode supported by the device."""
+    return min(
+        LIGHT_MODE_TO_KELVIN,
+        key=lambda mode: abs(LIGHT_MODE_TO_KELVIN[mode] - kelvin),
+    )
+
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
@@ -59,11 +80,14 @@ class AtombergFanLightEntity(AtombergEntity, LightEntity):
         self._attr_unique_id = self._get_unique_id(Platform.LIGHT, ATTR_LED)
 
         # Controls
-        self._attr_supported_color_modes = {
-            ColorMode.BRIGHTNESS
-            if self._device.supports_brightness_control
-            else ColorMode.ONOFF
-        }
+        if self._device.supports_color_effect:
+            self._attr_supported_color_modes = {ColorMode.COLOR_TEMP}
+            self._attr_min_color_temp_kelvin = MIN_COLOR_TEMP_KELVIN
+            self._attr_max_color_temp_kelvin = MAX_COLOR_TEMP_KELVIN
+        elif self._device.supports_brightness_control:
+            self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+        else:
+            self._attr_supported_color_modes = {ColorMode.ONOFF}
 
         # Light modes
         if self._device.supports_color_effect:
@@ -84,9 +108,18 @@ class AtombergFanLightEntity(AtombergEntity, LightEntity):
     @property
     def color_mode(self) -> ColorMode:
         """Get current color mode."""
+        if ColorMode.COLOR_TEMP in self.supported_color_modes:
+            return ColorMode.COLOR_TEMP
         if ColorMode.BRIGHTNESS in self.supported_color_modes and self.brightness:
             return ColorMode.BRIGHTNESS
         return ColorMode.ONOFF
+
+    @property
+    def color_temp_kelvin(self) -> int | None:
+        """Get current color temperature in kelvin."""
+        if light_mode := self.device_state.get(ATTR_LIGHT_MODE):
+            return LIGHT_MODE_TO_KELVIN.get(light_mode)
+        return None
 
     @property
     def effect(self) -> str | None:
@@ -106,6 +139,9 @@ class AtombergFanLightEntity(AtombergEntity, LightEntity):
 
         if effect := kwargs.get(ATTR_EFFECT):
             cmd[ATTR_LIGHT_MODE] = FAN_LED_EFFECTS[effect]
+
+        if color_temp := kwargs.get(ATTR_COLOR_TEMP_KELVIN):
+            cmd[ATTR_LIGHT_MODE] = kelvin_to_light_mode(color_temp)
 
         await self._device.async_send_light_command(cmd)
 
