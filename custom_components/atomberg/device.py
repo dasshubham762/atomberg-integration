@@ -137,30 +137,50 @@ class AtombergDevice:
         self._options = config_entry.options
         _LOGGER.debug("Options updated for %s: %s", self.name, self._options)
 
-    async def _async_send_command(self, command: dict) -> bool:
-        """Send command to the device."""
-        if not self._options.get(CONF_USE_CLOUD_CONTROL, False) and self.ip_address:
-            message = json.dumps(command).encode()
+    def _send_local_command(self, command: dict) -> bool:
+        """Send command to the device over local UDP."""
+        message = json.dumps(command).encode()
+        try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
                 sent_bytes = sock.sendto(message, (self.ip_address, 5600))
-                res = sent_bytes > 0
-                if res:
-                    _LOGGER.debug(
-                        "Command sent to %s (%s): %s",
-                        self.name,
-                        self.ip_address,
-                        command,
-                    )
-                else:
-                    _LOGGER.error(
-                        "Failed to send command to %s (%s): %s",
-                        self.name,
-                        self.ip_address,
-                        command,
-                    )
-                return res
+        except OSError as err:
+            _LOGGER.error(
+                "Failed to send command to %s (%s): %s - %s",
+                self.name,
+                self.ip_address,
+                command,
+                err,
+            )
+            return False
+
+        res = sent_bytes > 0
+        if res:
+            _LOGGER.debug(
+                "Command sent to %s (%s): %s",
+                self.name,
+                self.ip_address,
+                command,
+            )
         else:
-            return await self._api.async_send_command(self.id, command)
+            _LOGGER.error(
+                "Failed to send command to %s (%s): %s",
+                self.name,
+                self.ip_address,
+                command,
+            )
+        return res
+
+    async def _async_send_command(self, command: dict) -> bool:
+        """Send command to the device, local API first with cloud fallback."""
+        if not self._options.get(CONF_USE_CLOUD_CONTROL, False) and self.ip_address:
+            if self._send_local_command(command):
+                return True
+            _LOGGER.warning(
+                "Local command delivery failed for %s (%s), falling back to cloud API",
+                self.name,
+                self.ip_address,
+            )
+        return await self._api.async_send_command(self.id, command)
 
     async def async_turn_on(self):
         """Turn on."""
