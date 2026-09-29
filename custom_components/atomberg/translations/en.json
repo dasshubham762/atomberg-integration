@@ -43,10 +43,14 @@
       "init": {
         "title": "Options",
         "data": {
-          "use_cloud_control": "Use cloud control"
+          "use_cloud_control": "Use cloud control",
+          "state_update_method": "State update method",
+          "polling_interval": "Polling interval (seconds)"
         },
         "data_description": {
-          "use_cloud_control": "When enabled, the integration will send control commands to the Atomberg cloud APIs instead of directly to the device."
+          "use_cloud_control": "When enabled, the integration will send control commands to the Atomberg cloud APIs instead of directly to the device.",
+          "state_update_method": "How device state is refreshed. Use 'UDP broadcasts' when the fans and Home Assistant are on the same network. Use 'Cloud API polling' when broadcasts can't reach Home Assistant (e.g. fans on a separate VLAN).",
+          "polling_interval": "How often to poll the Atomberg cloud for device state when using API polling. Lower values update faster but make more API calls."
         }
       }
     }
@@ -78,6 +82,12 @@
       "options": {
         "cloud": "Cloud API",
         "ir": "Infrared (IR)"
+      }
+    },
+    "state_update_method": {
+      "options": {
+        "broadcast": "UDP broadcasts (local network)",
+        "polling": "Cloud API polling (works across VLANs)"
       }
     },
     "fan_model": {
