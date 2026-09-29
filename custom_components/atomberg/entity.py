@@ -92,6 +92,9 @@ class AtombergEntity(CoordinatorEntity, Entity):
     @property
     def available(self) -> bool:
         """Whether the entity is online."""
+        # In polling mode a failed API refresh means we don't know the state.
+        if self.coordinator.use_polling and not self.coordinator.last_update_success:
+            return False
         return self.device_state[ATTR_IS_ONLINE]
 
     @property
@@ -101,6 +104,13 @@ class AtombergEntity(CoordinatorEntity, Entity):
 
     @callback
     def _handle_coordinator_update(self) -> None:
+        # Polling mode: coordinator.data is a mapping of device_id -> decoded state.
+        if self.coordinator.use_polling:
+            self._handle_polling_update()
+            return
+
+        if not self.coordinator.data:
+            return
         if self.coordinator.data["device_id"] != self._device.id:
             return
 
@@ -146,6 +156,17 @@ class AtombergEntity(CoordinatorEntity, Entity):
         self._device.update_last_seen(utcnow().timestamp())
         self.update_ha_state_if_required()
 
+    @callback
+    def _handle_polling_update(self) -> None:
+        """Apply state fetched from the cloud API (polling mode)."""
+        device_data = (self.coordinator.data or {}).get(self._device.id)
+        if not device_data:
+            return
+
+        self._device.update_state(device_data)
+        self._device.update_last_seen(utcnow().timestamp())
+        self.update_ha_state_if_required()
+
     def update_ha_state_if_required(self):
         """Update entity state on HA if required."""
         if self.device_state != self._device.state:
@@ -170,9 +191,24 @@ class AtombergEntity(CoordinatorEntity, Entity):
             )
             self.update_ha_state_if_required()
 
+    @callback
+    def _handle_device_update(self) -> None:
+        """Reflect locally-applied state (e.g. after a command) immediately."""
+        self.update_ha_state_if_required()
+
     async def async_added_to_hass(self) -> None:
         """Run when entity is added to hass."""
         await super().async_added_to_hass()
+
+        # Optimistically reflect commands in the UI as soon as they are applied,
+        # before the next poll/broadcast reconciles the actual state.
+        self._device.add_update_callback(self._handle_device_update)
+
+        # In polling mode availability comes from the API, so the broadcast-based
+        # availability refresher is not needed. Seed the initial state instead.
+        if self.coordinator.use_polling:
+            self._handle_polling_update()
+            return
 
         # Start availability refresher
         self._stop_availability_refresher = async_track_time_interval(
@@ -183,6 +219,8 @@ class AtombergEntity(CoordinatorEntity, Entity):
 
     async def async_will_remove_from_hass(self) -> None:
         """Run when entity will be removed from hass."""
+        self._device.remove_update_callback(self._handle_device_update)
+
         # Stop availability refresher
         if self._stop_availability_refresher:
             self._stop_availability_refresher()

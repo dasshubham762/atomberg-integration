@@ -60,6 +60,7 @@ class AtombergDevice:
         self._last_seen: int = None
         self._ip_addr: str = None
         self._options = config_entry.options if config_entry else {}
+        self._update_callbacks: set = set()
 
         # Add options update listener
         if config_entry:
@@ -132,6 +133,19 @@ class AtombergDevice:
             _LOGGER.debug("IP address updated for %s: %s", self.name, value)
             self._ip_addr = value
 
+    def add_update_callback(self, callback) -> None:
+        """Register a callback fired when the state is updated locally."""
+        self._update_callbacks.add(callback)
+
+    def remove_update_callback(self, callback) -> None:
+        """Remove a previously registered update callback."""
+        self._update_callbacks.discard(callback)
+
+    def _notify_update(self) -> None:
+        """Notify listeners that the state changed (e.g. after a command)."""
+        for callback in self._update_callbacks:
+            callback()
+
     async def _update_options(self, hass: HomeAssistant, config_entry: ConfigEntry):
         """Update options."""
         self._options = config_entry.options
@@ -168,6 +182,7 @@ class AtombergDevice:
         if await self._async_send_command(cmd):
             _LOGGER.debug("%s: turned on", self.name)
             self.update_state(cmd)
+            self._notify_update()
 
     async def async_turn_off(self):
         """Turn off."""
@@ -175,6 +190,7 @@ class AtombergDevice:
         if await self._async_send_command(cmd):
             _LOGGER.debug("%s: turned off", self.name)
             self.update_state(cmd)
+            self._notify_update()
 
     async def async_set_speed(self, value: int):
         """Set speed."""
@@ -184,6 +200,7 @@ class AtombergDevice:
         if await self._async_send_command(cmd):
             _LOGGER.debug("%s: set speed %d", self.name, value)
             self.update_state(cmd)
+            self._notify_update()
 
     async def async_send_light_command(self, cmd: dict):
         """Send combined light command."""
@@ -197,6 +214,7 @@ class AtombergDevice:
         if await self._async_send_command(cmd):
             _LOGGER.debug("%s: Light command executed successfully.", self.name)
             self.update_state(cmd)
+            self._notify_update()
 
     async def async_turn_on_sleep_mode(self):
         """Turn on sleep mode."""
@@ -204,6 +222,7 @@ class AtombergDevice:
         if await self._async_send_command(cmd):
             _LOGGER.debug("%s: turned on sleep mode", self.name)
             self.update_state(cmd)
+            self._notify_update()
 
     async def async_turn_off_sleep_mode(self):
         """Turn off sleep mode."""
@@ -211,6 +230,7 @@ class AtombergDevice:
         if await self._async_send_command(cmd):
             _LOGGER.debug("%s: turned off sleep mode", self.name)
             self.update_state(cmd)
+            self._notify_update()
 
     async def async_set_timer(self, value: int):
         """Set timer."""
@@ -219,6 +239,7 @@ class AtombergDevice:
         if await self._api.async_send_command(self.id, {"timer": value}):
             _LOGGER.debug("%s: set sleep mode: %d", self.name, value)
             self.update_state({ATTR_TIMER_HOURS: TIMER_MAPPING[value][0]})
+            self._notify_update()
 
     def update_state(self, new_state: dict):
         """Update states."""

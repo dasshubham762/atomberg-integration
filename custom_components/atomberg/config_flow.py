@@ -20,6 +20,9 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.selector import (
     EntitySelector,
     EntitySelectorConfig,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -30,13 +33,20 @@ from .const import (
     CONF_CONTROL_METHOD,
     CONF_FAN_MODEL,
     CONF_IR_EMITTER_ENTITY,
+    CONF_POLLING_INTERVAL,
     CONF_REFRESH_TOKEN,
+    CONF_STATE_UPDATE_METHOD,
     CONF_USE_CLOUD_CONTROL,
+    DEFAULT_POLLING_INTERVAL,
+    DEFAULT_STATE_UPDATE_METHOD,
     DOMAIN,
     ENTRIES,
     FAN_MODEL_NAMES,
+    MAX_POLLING_INTERVAL,
+    MIN_POLLING_INTERVAL,
     ControlMethod,
     FanModel,
+    StateUpdateMethod,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,6 +61,29 @@ CLOUD_DATA_SCHEMA = vol.Schema(
 OPTIONS_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USE_CLOUD_CONTROL, default=False): cv.boolean,
+        vol.Required(
+            CONF_STATE_UPDATE_METHOD, default=DEFAULT_STATE_UPDATE_METHOD
+        ): SelectSelector(
+            SelectSelectorConfig(
+                options=[
+                    StateUpdateMethod.BROADCAST.value,
+                    StateUpdateMethod.POLLING.value,
+                ],
+                translation_key=CONF_STATE_UPDATE_METHOD,
+                mode=SelectSelectorMode.DROPDOWN,
+            )
+        ),
+        vol.Required(
+            CONF_POLLING_INTERVAL, default=DEFAULT_POLLING_INTERVAL
+        ): NumberSelector(
+            NumberSelectorConfig(
+                min=MIN_POLLING_INTERVAL,
+                max=MAX_POLLING_INTERVAL,
+                step=1,
+                unit_of_measurement="seconds",
+                mode=NumberSelectorMode.BOX,
+            )
+        ),
     }
 )
 

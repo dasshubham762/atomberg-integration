@@ -163,9 +163,15 @@ class AtombergCloudAPI:
         return status
 
     async def async_get_device_state(
-        self, device_ids: list[str] | None = None
+        self, device_ids: list[str] | None = None, *, force_offline: bool = True
     ) -> list[dict] | None:
-        """Get state of all/single device(s)."""
+        """Get state of all/single device(s).
+
+        When ``force_offline`` is True the reported ``is_online`` is discarded and
+        forced to False, since local presence is otherwise detected via UDP
+        broadcasts. When polling the cloud API directly (no broadcasts), pass
+        ``force_offline=False`` to keep the API-reported online status.
+        """
         resp = await self.async_make_request("/v1/get_device_state?device_id=all")
 
         data = resp.json()
@@ -175,15 +181,19 @@ class AtombergCloudAPI:
                 lambda s: s["device_id"] in device_ids if device_ids else True,
                 deepcopy(data["message"]["device_state"]),
             ):
-                # Keep is_online=False unless it's presense detected through udp broadcasts
-                state["is_online"] = False
+                if force_offline:
+                    # Keep is_online=False unless presence is detected via udp broadcasts
+                    state["is_online"] = False
+                else:
+                    state["is_online"] = state.get("is_online", False)
                 # Rename some keys for ease of access
                 state["speed"] = state.pop("last_recorded_speed")
                 state["sleep"] = state.pop("sleep_mode")
                 if state.get("last_recorded_brightness"):
                     state["brightness"] = state.pop("last_recorded_brightness")
                 if state.get("last_recorded_color"):
-                    state["light_mode"] = state.pop("last_recorded_color")
+                    # Normalise to lowercase to match the internal light_mode values
+                    state["light_mode"] = state.pop("last_recorded_color").lower()
                 device_state.append(state)
 
             return device_state
