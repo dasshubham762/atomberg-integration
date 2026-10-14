@@ -5,7 +5,7 @@ from logging import getLogger
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .api import AtombergCloudAPI
+from .api import DEVICE_TYPE_FAN, AtombergCloudAPI
 from .const import MANUFACTURER
 from .device import AtombergDevice
 from .udp_listener import UDPListener
@@ -27,6 +27,7 @@ class AtombergDataUpdateCoordinator(DataUpdateCoordinator):
         self.devices = [
             AtombergDevice(data=data, api=self.api, config_entry=self.config_entry)
             for data in self.api.device_list.values()
+            if data["device_type"] == DEVICE_TYPE_FAN
         ]
 
         # Add callback on udp listener
