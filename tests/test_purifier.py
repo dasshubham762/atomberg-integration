@@ -56,6 +56,7 @@ async def test_setup_entities(
         f"binary_sensor.{PREFIX}_no_water",
         f"binary_sensor.{PREFIX}_tank_full",
         f"button.{PREFIX}_refresh",
+        f"sensor.{PREFIX}_last_reported",
     }
     # Fan entities are unchanged, lock is ignored
     assert "fan.bedroom_fan" in entity_ids
@@ -145,7 +146,7 @@ async def test_fault_sensors(
         ),
     ],
 )
-async def test_commands(
+async def test_commands(  # noqa: PLR0917
     hass: HomeAssistant,
     cloud: FakeCloud,
     setup_integration: MockConfigEntry,
@@ -194,6 +195,53 @@ async def test_sleep_window(
     command = cloud.commands[-1]
     assert set(command) == {"sleep_mode", "start_utc", "stop_utc"}
     assert utc_seconds_to_local_time(command["stop_utc"]) == time(6, 0)
+
+
+async def test_sleep_window_never_set(
+    hass: HomeAssistant, cloud: FakeCloud, mock_udp_listener, config_entry
+) -> None:
+    """A window reported as start == stop is treated as not set."""
+    cloud.set_purifier_state(start_utc=0, stop_utc=0)
+    config_entry.add_to_hass(hass)
+    await hass.config.async_set_time_zone("Asia/Kolkata")
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    start_entity = f"time.{PREFIX}_sleep_window_start"
+    end_entity = f"time.{PREFIX}_sleep_window_end"
+    assert hass.states.get(start_entity).state == "unknown"
+    assert hass.states.get(end_entity).state == "unknown"
+
+    switch = {"entity_id": f"switch.{PREFIX}_sleep_window"}
+    with pytest.raises(HomeAssistantError, match="first"):
+        await hass.services.async_call("switch", "turn_on", switch, blocking=True)
+
+    await hass.services.async_call(
+        "time", "set_value", {"entity_id": start_entity, "time": "23:00:00"}, True
+    )
+    with pytest.raises(HomeAssistantError, match="first"):
+        await hass.services.async_call("switch", "turn_on", switch, blocking=True)
+
+    await hass.services.async_call(
+        "time", "set_value", {"entity_id": end_entity, "time": "06:00:00"}, True
+    )
+    await hass.services.async_call("switch", "turn_on", switch, blocking=True)
+    [command] = cloud.commands
+    assert utc_seconds_to_local_time(command["start_utc"]) == time(23, 0)
+    assert utc_seconds_to_local_time(command["stop_utc"]) == time(6, 0)
+    assert hass.states.get("switch.kitchen_purifier_sleep_window").state == STATE_ON
+
+
+async def test_offline_purifier_unavailable(
+    hass: HomeAssistant, cloud: FakeCloud, setup_integration: MockConfigEntry
+) -> None:
+    """Entities go unavailable when the cloud reports the purifier offline."""
+    cloud.set_purifier_state(is_online=False)
+    await hass.services.async_call(
+        "button", "press", {"entity_id": f"button.{PREFIX}_refresh"}, True
+    )
+    await hass.async_block_till_done()
+    assert hass.states.get(f"sensor.{PREFIX}_tank_tds").state == STATE_UNAVAILABLE
 
 
 async def test_refresh_and_quota_exhausted(
@@ -271,9 +319,7 @@ async def test_older_firmware_without_optional_fields(
     assert hass.states.get(f"time.{PREFIX}_sleep_window_start") is None
 
 
-async def test_unload(
-    hass: HomeAssistant, setup_integration: MockConfigEntry
-) -> None:
+async def test_unload(hass: HomeAssistant, setup_integration: MockConfigEntry) -> None:
     """Unloading removes the purifier coordinator."""
     assert await hass.config_entries.async_unload(setup_integration.entry_id)
     await hass.async_block_till_done()

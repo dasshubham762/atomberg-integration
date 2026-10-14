@@ -297,16 +297,27 @@ class AtombergPurifier(AtombergBaseDevice):
         """Replace state with the one reported by the cloud."""
         self._state = state
 
+    def _sleep_window_values(self) -> tuple[int | None, int | None]:
+        """Get sleep window start and stop epoch values, None when not set."""
+        reported = (self._state.get(ATTR_START_UTC), self._state.get(ATTR_STOP_UTC))
+        # A window that was never set is reported as start == stop (0, 0)
+        if (
+            reported[0] is None
+            or reported[1] is None
+            or (reported[0] % 86400 == reported[1] % 86400)
+        ):
+            reported = (None, None)
+        return (
+            self._pending_sleep_window.get(ATTR_START_UTC, reported[0]),
+            self._pending_sleep_window.get(ATTR_STOP_UTC, reported[1]),
+        )
+
     @property
     def sleep_window(self) -> tuple[time | None, time | None]:
         """Get the sleep window start and end as local times."""
-        values = [
-            self._pending_sleep_window.get(key, self._state.get(key))
-            for key in (ATTR_START_UTC, ATTR_STOP_UTC)
-        ]
         return tuple(
             utc_seconds_to_local_time(value) if value is not None else None
-            for value in values
+            for value in self._sleep_window_values()
         )
 
     async def _async_send_command(self, command: dict):
@@ -346,12 +357,11 @@ class AtombergPurifier(AtombergBaseDevice):
             await self._async_send_command({ATTR_SLEEP_MODE: 0})
             return
 
-        start, stop = (
-            self._pending_sleep_window.get(key, self._state.get(key))
-            for key in (ATTR_START_UTC, ATTR_STOP_UTC)
-        )
+        start, stop = self._sleep_window_values()
         if start is None or stop is None:
             raise HomeAssistantError("Set the sleep window start and end time first.")
+        if start % 86400 == stop % 86400:
+            raise HomeAssistantError("Sleep window start and end time must differ.")
         await self._async_send_command(
             {ATTR_SLEEP_MODE: 1, ATTR_START_UTC: start, ATTR_STOP_UTC: stop}
         )

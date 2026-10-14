@@ -4,6 +4,7 @@
     "device_state": [
       {
         "device_id": "6867258b9d78",
+        "series": "R1",
         "power": true,
         "last_recorded_speed": 4,
         "sleep_mode": false,
@@ -15,6 +16,9 @@
       },
       {
         "device_id": "a0764ee4210c",
+        "series": "W2",
+        "is_online": true,
+        "ts_epoch_seconds": 1791998878,
         "mode": 4,
         "fallback_mode": 0,
         "idle_sleep": 1,
@@ -27,8 +31,14 @@
         "choking_faults": {
           "raw": 9,
           "healthy": false,
-          "codes": ["RO_CHOKE", "POST_RO_CHOKE"],
-          "descriptions": ["RO membrane choked", "Post-RO / common path choked"],
+          "codes": [
+            "RO_CHOKE",
+            "POST_RO_CHOKE"
+          ],
+          "descriptions": [
+            "RO membrane choked",
+            "Post-RO / common path choked"
+          ],
           "filter_choke": true,
           "sv_fault": false,
           "unknown_bits": 0
