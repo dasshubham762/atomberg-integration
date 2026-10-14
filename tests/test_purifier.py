@@ -23,7 +23,7 @@ from custom_components.atomberg.device import (
     utc_seconds_to_local_time,
 )
 
-from .conftest import FakeCloud
+from .conftest import PURIFIER_ID, FakeCloud
 
 PREFIX = "kitchen_purifier"
 STATE_PATH = "/get_device_state?device_id=all"
@@ -307,8 +307,9 @@ async def test_older_firmware_without_optional_fields(
 ) -> None:
     """Firmware-dependent settings are skipped when not reported."""
     for state in cloud.states["message"]["device_state"]:
-        for key in ("tds_threshold", "sleep_mode", "start_utc", "stop_utc"):
-            state.pop(key, None)
+        if state["device_id"] == PURIFIER_ID:
+            for key in ("tds_threshold", "sleep_mode", "start_utc", "stop_utc"):
+                del state[key]
     config_entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()

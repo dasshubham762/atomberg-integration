@@ -77,7 +77,7 @@ class FakeCloud:
         path = self._path(url)
         self.calls.append(("GET", path, None))
         if path == "/get_access_token":
-            token = jwt.encode({"exp": int(time.time()) + 86400}, "x", "HS256")
+            token = jwt.encode({"exp": int(time.time()) + 86400}, "x" * 32, "HS256")
             return self._respond(
                 path, {"status": "Success", "message": {"access_token": token}}
             )
