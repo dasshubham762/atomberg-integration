@@ -1,8 +1,10 @@
 """Tests for Atomberg water purifier support."""
 
+import importlib
 from datetime import time, timedelta
 
 import pytest
+from homeassistant import const as ha_const
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -13,6 +15,7 @@ from pytest_homeassistant_custom_component.common import (
     async_fire_time_changed,
 )
 
+from custom_components.atomberg import const
 from custom_components.atomberg.const import (
     CONF_PURIFIER_POLL_INTERVAL,
     DOMAIN,
@@ -332,3 +335,14 @@ async def test_time_conversion_roundtrip(hass: HomeAssistant) -> None:
     await hass.config.async_set_time_zone("Asia/Kolkata")
     for value in (time(0, 0), time(3, 30), time(22, 15), time(23, 59)):
         assert utc_seconds_to_local_time(local_time_to_utc_seconds(value)) == value
+
+
+def test_ppm_unit_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ppm unit is defined on Home Assistant versions without UnitOfRatio."""
+    monkeypatch.delattr(ha_const, "UnitOfRatio")
+    try:
+        assert importlib.reload(const).UNIT_PPM == "ppm"
+    finally:
+        monkeypatch.undo()
+        importlib.reload(const)
+    assert const.UNIT_PPM == "ppm"

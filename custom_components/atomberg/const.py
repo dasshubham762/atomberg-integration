@@ -7,7 +7,7 @@ try:
 
     UNIT_PPM = UnitOfRatio.PARTS_PER_MILLION
 except ImportError:  # Home Assistant < 2026.7
-    pass
+    UNIT_PPM = "ppm"
 
 DOMAIN = "atomberg"
 
