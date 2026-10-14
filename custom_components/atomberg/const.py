@@ -6,12 +6,17 @@ DOMAIN = "atomberg"
 
 UDP_LISTENER = "udp_listener"
 ENTRIES = "entries"
+PURIFIER_COORDINATORS = "purifier_coordinators"
 
 CONF_REFRESH_TOKEN = "refresh_token"
 CONF_USE_CLOUD_CONTROL = "use_cloud_control"
 CONF_CONTROL_METHOD = "control_method"
 CONF_IR_EMITTER_ENTITY = "ir_emitter_entity"
 CONF_FAN_MODEL = "fan_model"
+CONF_PURIFIER_POLL_INTERVAL = "purifier_poll_interval"
+DEFAULT_PURIFIER_POLL_INTERVAL = 30  # Minutes, 48 API calls a day
+MIN_PURIFIER_POLL_INTERVAL = 15
+MAX_PURIFIER_POLL_INTERVAL = 240
 MANUFACTURER = "Atomberg"
 
 

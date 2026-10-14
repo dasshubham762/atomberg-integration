@@ -1,0 +1,61 @@
+{
+  "status": "Success",
+  "message": {
+    "devices_list": [
+      {
+        "device_id": "6867258b9d78",
+        "name": "Bedroom Fan",
+        "series": "R1",
+        "model": "Renesa+",
+        "color": "Brown",
+        "room": "Bedroom",
+        "device_type": "fan",
+        "metadata": {},
+        "supported_commands": [
+          { "command": "power", "accepts": "true or false" },
+          { "command": "speed", "accepts": "an integer from 1 to 6" },
+          { "command": "sleep", "accepts": "true or false" }
+        ]
+      },
+      {
+        "device_id": "a0764ee4210c",
+        "name": "Kitchen Purifier",
+        "series": "W2",
+        "model": "Intellon",
+        "room": "Kitchen",
+        "device_type": "water_purifier",
+        "metadata": {},
+        "supported_commands": [
+          { "command": "mode", "accepts": "one of 0, 1, 2, 3, 4, 10" },
+          { "command": "fallback_mode", "accepts": "one of 0, 2, 3, 4" },
+          { "command": "tds_threshold", "accepts": "an integer from 100 to 300" },
+          { "command": "idle_sleep", "accepts": "one of 0, 1" },
+          {
+            "command": "sleep_mode",
+            "accepts": "one of 0, 1",
+            "requires": ["start_utc", "stop_utc"]
+          },
+          {
+            "command": "start_utc",
+            "accepts": "an integer from 0 to 4294967295",
+            "sub_key_of": "sleep_mode"
+          },
+          {
+            "command": "stop_utc",
+            "accepts": "an integer from 0 to 4294967295",
+            "sub_key_of": "sleep_mode"
+          }
+        ]
+      },
+      {
+        "device_id": "c0ffee000001",
+        "name": "Front Door",
+        "series": "G1",
+        "model": "Cypheo Elite",
+        "device_type": "lock",
+        "metadata": {},
+        "supported_commands": []
+      }
+    ]
+  }
+}
