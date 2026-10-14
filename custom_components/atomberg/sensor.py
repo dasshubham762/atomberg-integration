@@ -9,15 +9,12 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    CONCENTRATION_PARTS_PER_MILLION,
-    EntityCategory,
-    Platform,
-)
+from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
+from .const import UNIT_PPM
 from .coordinator import AtombergDataUpdateCoordinator
 from .device import (
     ATTR_INPUT_TDS,
@@ -110,7 +107,7 @@ class PurifierTdsSensor(AtombergPurifierEntity, SensorEntity):
     """Water purifier TDS sensor entity."""
 
     _attr_icon = "mdi:water-opacity"
-    _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
+    _attr_native_unit_of_measurement = UNIT_PPM
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(

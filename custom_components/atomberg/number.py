@@ -2,14 +2,11 @@
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    CONCENTRATION_PARTS_PER_MILLION,
-    EntityCategory,
-    Platform,
-)
+from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .const import UNIT_PPM
 from .device import ATTR_TDS_THRESHOLD, TDS_THRESHOLD_RANGE, AtombergPurifier
 from .purifier_coordinator import AtombergPurifierCoordinator
 from .purifier_entity import AtombergPurifierEntity, purifier_async_setup_entry
@@ -40,7 +37,7 @@ class PurifierTdsThresholdNumber(AtombergPurifierEntity, NumberEntity):
     _attr_native_min_value = TDS_THRESHOLD_RANGE[0]
     _attr_native_max_value = TDS_THRESHOLD_RANGE[1]
     _attr_native_step = 1
-    _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
+    _attr_native_unit_of_measurement = UNIT_PPM
 
     def __init__(
         self, coordinator: AtombergPurifierCoordinator, device: AtombergPurifier

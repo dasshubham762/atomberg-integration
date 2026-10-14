@@ -2,6 +2,13 @@
 
 from enum import StrEnum
 
+try:
+    from homeassistant.const import UnitOfRatio
+
+    UNIT_PPM = UnitOfRatio.PARTS_PER_MILLION
+except ImportError:  # Home Assistant < 2026.7
+    pass
+
 DOMAIN = "atomberg"
 
 UDP_LISTENER = "udp_listener"
