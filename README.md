@@ -59,11 +59,31 @@
 
 ## Control Methods
 
-This integration supports two control methods. You choose which one to use during setup.
+This integration supports three control methods. You choose which one to use during setup.
 
 ### Cloud API Control
 
 Uses the Atomberg cloud APIs for fan control. Requires an `api_key` and `refresh_token` from the [Atomberg Developer Portal](https://developer.atomberg-iot.com/#overview). Provides full two-way state feedback (speed, power, light, etc.).
+
+### Local UDP Control (no cloud)
+
+Controls fans directly over your LAN. No `api_key` / `refresh_token` needed. Keeps working during Atomberg cloud outages.
+
+Requires fan + Home Assistant on the same LAN/VLAN. Keep inbound UDP `5625` (listener) open in HA, and allow outbound commands to fan port `5600`.
+
+Two related entries:
+
+1. **Local Discovery (UDP)** — background/bootstrap entry. Listens for fan broadcasts and prompts you to add each discovered fan. Not tied to one device.
+2. **Local UDP Device** — per-fan entry created after you confirm a discovery. This is what actually controls the fan.
+
+Setup: Add integration → select **Local Discovery (UDP)** → confirm each discovered fan when prompted.
+
+#### Known limitations — read before switching from Cloud
+
+- **Passive state only, no active polling.** There is no known read-only state query — any probe packet acts as a control command.
+- **Fans stay `unavailable` after HA restart until each fan sends its own broadcast.** The wait is fan-driven, not HA-driven — no timeout can be promised.
+- **Control while `unavailable` works only if the fan IP is already known** (command sent to `:5600`, state resolves on next broadcast). If IP is unknown, the packet is dropped until the first broadcast arrives.
+- **State can lag.** Physical remote / Atomberg app changes appear only on the next broadcast.
 
 ### Infrared (IR) Control
 
