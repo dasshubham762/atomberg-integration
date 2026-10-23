@@ -153,11 +153,6 @@ async def _async_setup_local_udp_entry(hass: HomeAssistant, entry: ConfigEntry) 
 
     await hass.config_entries.async_forward_entry_setups(entry, LOCAL_UDP_PLATFORMS)
 
-    # Trigger an initial no-op local command to prompt a fresh state broadcast.
-    # If IP is not known yet, this will no-op and state will update on next push.
-    if coordinator.devices:
-        await coordinator.devices[0].async_request_state_refresh()
-
     return True
 
 

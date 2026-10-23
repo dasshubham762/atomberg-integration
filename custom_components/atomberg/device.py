@@ -58,6 +58,7 @@ class AtombergDevice:
         self._api = api
         self._state: dict = data.get("state", {})
         self._last_seen: int = None
+        self._state_confirmed = False
         self._ip_addr: str = data.get("ip_address")
         self._options = config_entry.options if config_entry else {}
 
@@ -179,7 +180,9 @@ class AtombergDevice:
     async def async_request_state_refresh(self) -> bool:
         """Trigger a no-op command that makes the fan broadcast current state.
 
-        Sending {"speedDelta": 0} does not modify state but prompts a fresh state broadcast from the device.
+        Sending {"speedDelta": 0} prompts a fresh state broadcast from the device,
+        but some fans treat it as a speed change and power on. It is therefore not
+        called automatically; devices already broadcast their state periodically.
         """
         return await self._async_send_command({"speedDelta": 0})
 
@@ -243,4 +246,13 @@ class AtombergDevice:
 
     def update_state(self, new_state: dict):
         """Update states."""
+        if new_state.keys() - {ATTR_IS_ONLINE}:
+            self._state_confirmed = True
         self._state.update(new_state)
+
+    def restore_state(self, saved_state: dict) -> bool:
+        """Restore a previously saved state unless a real one is already known."""
+        if self._state_confirmed or not saved_state:
+            return False
+        self._state.update(saved_state)
+        return True

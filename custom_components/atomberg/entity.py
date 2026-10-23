@@ -9,9 +9,9 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.restore_state import RestoredExtraData, RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.dt import utcnow
 
@@ -35,6 +35,16 @@ from .device import (
 
 AVAILABILITY_TIMEOUT = 10  # Seconds
 
+RESTORABLE_STATE_KEYS = (
+    ATTR_POWER,
+    ATTR_LED,
+    ATTR_SLEEP,
+    ATTR_SPEED,
+    ATTR_TIMER_HOURS,
+    ATTR_BRIGHTNESS,
+    ATTR_LIGHT_MODE,
+)
+
 _EntityT = TypeVar("_EntityT", bound="AtombergEntity")
 
 
@@ -54,7 +64,7 @@ async def platform_async_setup_entry(
     )
 
 
-class AtombergEntity(CoordinatorEntity, Entity):
+class AtombergEntity(CoordinatorEntity, RestoreEntity):
     """Atomberg base entity."""
 
     def __init__(
@@ -104,7 +114,6 @@ class AtombergEntity(CoordinatorEntity, Entity):
         if self.coordinator.data["device_id"] != self._device.id:
             return
 
-        was_available = self.available
         state_string = self.coordinator.data.get("state_string")
         state = {}
         # Decode the state data
@@ -145,8 +154,6 @@ class AtombergEntity(CoordinatorEntity, Entity):
 
         self._device.update_state({**state, ATTR_IS_ONLINE: True})
         self._device.update_ip_address(self.coordinator.data.get(CONF_IP_ADDRESS))
-        if not was_available and not state_string:
-            self.hass.async_create_task(self._device.async_request_state_refresh())
         self._device.update_last_seen(utcnow().timestamp())
         self.update_ha_state_if_required()
 
@@ -174,9 +181,26 @@ class AtombergEntity(CoordinatorEntity, Entity):
             )
             self.update_ha_state_if_required()
 
+    @property
+    def extra_restore_state_data(self) -> RestoredExtraData:
+        """Persist the last known device state.
+
+        The fans only report their state after a command is sent and offer no
+        read-only query, so the last known state is restored on startup instead.
+        """
+        state = self._device.state
+        return RestoredExtraData(
+            {key: state[key] for key in RESTORABLE_STATE_KEYS if key in state}
+        )
+
     async def async_added_to_hass(self) -> None:
         """Run when entity is added to hass."""
         await super().async_added_to_hass()
+
+        # Restore the last known state until the fan reports a real one
+        if (extra_data := await self.async_get_last_extra_data()) is not None:
+            if self._device.restore_state(extra_data.as_dict()):
+                self._attr_device_state = self._device.state
 
         # Start availability refresher
         self._stop_availability_refresher = async_track_time_interval(
