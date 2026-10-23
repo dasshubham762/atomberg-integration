@@ -58,7 +58,9 @@ class AtombergDevice:
         self._api = api
         self._state: dict = data.get("state", {})
         self._last_seen: int = None
-        self._state_confirmed = False
+        # Cloud devices start with an authoritative state; local ones only have
+        # placeholder defaults, so a restored state may fill those in.
+        self._state_confirmed = api is not None and bool(self._state)
         self._ip_addr: str = data.get("ip_address")
         self._options = config_entry.options if config_entry else {}
 

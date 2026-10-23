@@ -76,12 +76,14 @@ class UDPListener(asyncio.DatagramProtocol):
             msg_data_bytes = bytes.fromhex(message)
             msg_data.update(json.loads(msg_data_bytes))
         except ValueError:
+            # Plain-text payload: the identifier is already fully normalized.
             msg_data.update(self._extract_device_details(message))
-
-        # Normalize device metadata from any payload form.
-        device_id_field = msg_data.get("device_id")
-        if isinstance(device_id_field, str) and device_id_field:
-            msg_data.update(self._extract_device_details(device_id_field))
+        else:
+            # Normalize device metadata from decoded JSON payloads only, so an
+            # identifier is never stripped of its series suffix twice.
+            device_id_field = msg_data.get("device_id")
+            if isinstance(device_id_field, str) and device_id_field:
+                msg_data.update(self._extract_device_details(device_id_field))
 
         for func in self._callbacks.values():
             func(msg_data)

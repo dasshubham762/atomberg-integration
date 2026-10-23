@@ -84,6 +84,7 @@ Setup: Add integration → select **Local Discovery (UDP)** → confirm each dis
 - **Fans stay `unavailable` after HA restart until each fan sends its own broadcast.** The wait is fan-driven, not HA-driven — no timeout can be promised.
 - **Control while `unavailable` works only if the fan IP is already known** (command sent to `:5600`, state resolves on next broadcast). If IP is unknown, the packet is dropped until the first broadcast arrives.
 - **State can lag.** Physical remote / Atomberg app changes appear only on the next broadcast.
+- **No command is sent at startup.** Home Assistant restores each fan's last known state after a restart instead of querying the fan, so fans are never switched on by a restart. Changes made with the remote or the Atomberg app while Home Assistant was down are not reflected until the fan is next controlled from Home Assistant.
 
 ### Infrared (IR) Control
 
