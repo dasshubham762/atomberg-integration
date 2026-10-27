@@ -381,7 +381,8 @@ ignore = [
     "RET502",
     "RET501",
     "TRY002",
-    "TRY301"
+    "TRY301",
+    "ICN001", # datetime should be imported as dt
 ]
 
 [tool.ruff.lint.flake8-pytest-style]
