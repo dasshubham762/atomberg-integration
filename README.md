@@ -137,6 +137,12 @@ If you want to contribute to this please read the [Contribution guidelines](CONT
 - Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [integration_blueprint][integration_blueprint] template
 - Atomberg IoT Team
 
+## Legal & Disclaimer
+
+This is an independent, third-party integration and is **not affiliated with, endorsed by Atomberg Technologies Pvt. Ltd.** All product and company names (including *Atomberg*, *Renesa*, *Aris*, *Erica*, and *Gorilla*) are trademarks of their respective owners and are used solely for identification and compatibility purposes.
+
+Use of the Atomberg Cloud API is subject to the terms and conditions of the [Atomberg Developer Portal](https://developer.atomberg-iot.com/). This software is provided **"as is"** under the [MIT License](LICENSE), without warranty of any kind. The maintainers assume no liability for any hardware issues, service interruptions, or voided warranties resulting from its use.
+
 
 [integration_blueprint]: https://github.com/ludeeus/integration_blueprint
 [commits-shield]: https://img.shields.io/github/commit-activity/y/dasshubham762/atomberg-integration.svg?style=for-the-badge
