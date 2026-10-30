@@ -374,3 +374,69 @@ async def test_local_udp_entry_unaffected(
     assert not [s for s in hass.states.async_all() if "purifier" in s.entity_id]
     assert cloud.calls == []
     assert PURIFIER_COORDINATORS not in hass.data[DOMAIN]
+
+
+async def test_command_rejected_in_response_body(
+    hass: HomeAssistant, cloud: FakeCloud, setup_integration: MockConfigEntry
+) -> None:
+    """A 200 response with an error status is not treated as success."""
+    cloud.error_body_paths.add("/send_command")
+    with pytest.raises(HomeAssistantError, match="rejected"):
+        await hass.services.async_call(
+            "select",
+            "select_option",
+            {"entity_id": f"select.{PREFIX}_purification_mode", "option": "Vacation"},
+            blocking=True,
+        )
+    assert hass.states.get(f"select.{PREFIX}_purification_mode").state == (
+        "TasteTune 100-150 ppm"
+    )
+
+
+async def test_sleep_window_time_rolled_back_on_failure(
+    hass: HomeAssistant, cloud: FakeCloud, mock_udp_listener, config_entry
+) -> None:
+    """A rejected time change doesn't linger in the time entity."""
+    cloud.set_purifier_state(sleep_mode=1)
+    config_entry.add_to_hass(hass)
+    await hass.config.async_set_time_zone("Asia/Kolkata")
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    start_entity = f"time.{PREFIX}_sleep_window_start"
+    before = hass.states.get(start_entity).state
+    assert before == "03:30:00"
+
+    # The cloud refuses the new time
+    cloud.status_overrides["/send_command"] = 503
+    with pytest.raises(HomeAssistantError):
+        await hass.services.async_call(
+            "time",
+            "set_value",
+            {"entity_id": start_entity, "time": "22:00:00"},
+            blocking=True,
+        )
+    # The rejected time must not show up when the entity next updates
+    await hass.services.async_call(
+        "button", "press", {"entity_id": f"button.{PREFIX}_refresh"}, True
+    )
+    await hass.async_block_till_done()
+    assert hass.states.get(start_entity).state == before
+
+    # Same start and end time is refused before anything is sent
+    cloud.status_overrides.clear()
+    end_entity = f"time.{PREFIX}_sleep_window_end"
+    with pytest.raises(HomeAssistantError, match="differ"):
+        await hass.services.async_call(
+            "time",
+            "set_value",
+            {"entity_id": start_entity, "time": hass.states.get(end_entity).state},
+            blocking=True,
+        )
+    await hass.services.async_call(
+        "button", "press", {"entity_id": f"button.{PREFIX}_refresh"}, True
+    )
+    await hass.async_block_till_done()
+    assert hass.states.get(start_entity).state == before
+    # Only the refused attempt was sent; the same-time attempt sent nothing
+    assert len(cloud.commands) == 1

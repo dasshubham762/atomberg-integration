@@ -63,11 +63,14 @@ class FakeCloud:
         self.states = load_fixture("states.json")
         self.calls: list[tuple[str, str, Any]] = []
         self.status_overrides: dict[str, int] = {}
+        self.error_body_paths: set[str] = set()
 
     def _path(self, url: str) -> str:
         return url.split("/v2", 1)[1]
 
     def _respond(self, path: str, body: Any) -> FakeResponse:
+        if path.split("?", 1)[0] in self.error_body_paths:
+            return FakeResponse(200, {"status": "Error", "message": "Rejected"})
         if status := self.status_overrides.get(path.split("?", 1)[0]):
             return FakeResponse(status, {"status": "Error", "message": "Failed"})
         return FakeResponse(200, deepcopy(body))

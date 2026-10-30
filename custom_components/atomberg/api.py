@@ -246,6 +246,13 @@ class AtombergCloudAPI:
         )
         _raise_for_status(resp)
 
+        try:
+            data = resp.json()
+        except ValueError as e:
+            raise ApiError("Atomberg API returned an invalid response") from e
+        if data.get("status") != "Success":
+            raise ApiError(f"Atomberg API rejected the command: {data.get('message')}")
+
 
 def _raise_for_status(resp: Response) -> None:
     """Raise an appropriate error for a failed API response."""

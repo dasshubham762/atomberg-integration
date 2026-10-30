@@ -437,8 +437,17 @@ class AtombergPurifier:
         """Set sleep window start or end time."""
         if key not in (ATTR_START_UTC, ATTR_STOP_UTC):
             raise ValueError(f"Key must be {ATTR_START_UTC} or {ATTR_STOP_UTC}.")
+        previous = self._pending_sleep_window.get(key)
         self._pending_sleep_window[key] = local_time_to_utc_seconds(value)
 
         # Apply right away only if the window is on, as sleep_mode=1 enables it
         if self._state.get(ATTR_SLEEP_MODE):
-            await self.async_set_sleep_window(True)
+            try:
+                await self.async_set_sleep_window(True)
+            except Exception:
+                # Don't keep showing a time the purifier never accepted
+                if previous is None:
+                    self._pending_sleep_window.pop(key, None)
+                else:
+                    self._pending_sleep_window[key] = previous
+                raise
