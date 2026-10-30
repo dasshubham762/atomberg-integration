@@ -17,9 +17,14 @@ from pytest_homeassistant_custom_component.common import (
 
 from custom_components.atomberg import const
 from custom_components.atomberg.const import (
+    CONF_CONTROL_METHOD,
+    CONF_DEVICE_ID,
+    CONF_DEVICE_SERIES,
+    CONF_DISPLAY_NAME,
     CONF_PURIFIER_POLL_INTERVAL,
     DOMAIN,
     PURIFIER_COORDINATORS,
+    ControlMethod,
 )
 from custom_components.atomberg.device import (
     local_time_to_utc_seconds,
@@ -346,3 +351,26 @@ def test_ppm_unit_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.undo()
         importlib.reload(const)
     assert const.UNIT_PPM == "ppm"
+
+
+async def test_local_udp_entry_unaffected(
+    hass: HomeAssistant, cloud: FakeCloud, mock_udp_listener
+) -> None:
+    """Local UDP entries set up without purifier entities or cloud calls."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_CONTROL_METHOD: ControlMethod.LOCAL_UDP,
+            CONF_DEVICE_ID: "3844be556628",
+            CONF_DEVICE_SERIES: "R3",
+            CONF_DISPLAY_NAME: "Work room fan",
+        },
+    )
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert hass.states.get("fan.work_room_fan") is not None
+    assert not [s for s in hass.states.async_all() if "purifier" in s.entity_id]
+    assert cloud.calls == []
+    assert PURIFIER_COORDINATORS not in hass.data[DOMAIN]

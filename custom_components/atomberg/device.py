@@ -1,4 +1,4 @@
-"""Device as wrapper for Atomberg Cloud APIs."""
+"""Device wrapper for Atomberg fans (cloud and local UDP modes)."""
 
 import json
 import socket
@@ -15,7 +15,7 @@ from homeassistant.helpers.device_registry import format_mac
 from homeassistant.util import dt as dt_util
 
 from .api import AtombergCloudAPI
-from .const import CONF_USE_CLOUD_CONTROL
+from .const import CONF_USE_CLOUD_CONTROL, UNKNOWN_SERIES
 
 _LOGGER = getLogger(__name__)
 
@@ -67,18 +67,45 @@ PURIFIER_FALLBACK_MODES = {k: PURIFIER_MODES[k] for k in (0, 2, 3, 4)}
 TDS_THRESHOLD_RANGE = (100, 300)
 
 
-class AtombergBaseDevice:
-    """Common properties of Atomberg cloud devices."""
+class AtombergDevice:
+    """Atomberg device."""
 
-    def __init__(self, data: dict[str, Any], api: AtombergCloudAPI) -> None:
-        """Init Atomberg base device."""
+    def __init__(
+        self,
+        data: dict[str, Any],
+        api: AtombergCloudAPI | None,
+        config_entry: ConfigEntry = None,
+    ) -> None:
+        """Init Atomberg device."""
         self._device_id = data["device_id"]
         self._color = data.get("color")
-        self._series = data["series"]
-        self._model = data.get("model")
-        self._name = data.get("name") or self._device_id
+        self._series = data.get("series", UNKNOWN_SERIES)
+        self._model = data.get("model", "Atomberg Fan")
+        self._name = data["name"]
         self._api = api
-        self._state: dict = data["state"]
+        self._state: dict = data.get("state", {})
+        self._last_seen: int = None
+        # Cloud devices start with an authoritative state; local ones only have
+        # placeholder defaults, so a restored state may fill those in.
+        self._state_confirmed = api is not None and bool(self._state)
+        self._ip_addr: str = data.get("ip_address")
+        self._options = config_entry.options if config_entry else {}
+
+        # Add options update listener
+        if config_entry:
+            config_entry.async_on_unload(
+                config_entry.add_update_listener(self._update_options)
+            )
+
+    @property
+    def supports_brightness_control(self):
+        """Check whether device supports brightness control."""
+        return self._series in SUPPORTED_BRIGHTNESS_CONTROL_SERIES
+
+    @property
+    def supports_color_effect(self):
+        """Check whether device supports color modes."""
+        return self._series in SUPPORTED_COLOR_EFFECT_SERIES
 
     @property
     def state(self) -> dict[str, Any]:
@@ -111,47 +138,6 @@ class AtombergBaseDevice:
         return self._model
 
     @property
-    def mac(self) -> str:
-        """Get MAC address."""
-        return format_mac(self.id)
-
-    def update_state(self, new_state: dict):
-        """Update states."""
-        self._state.update(new_state)
-
-
-class AtombergDevice(AtombergBaseDevice):
-    """Atomberg device."""
-
-    def __init__(
-        self,
-        data: dict[str, Any],
-        api: AtombergCloudAPI,
-        config_entry: ConfigEntry = None,
-    ) -> None:
-        """Init Atomberg device."""
-        super().__init__(data, api)
-        self._last_seen: int = None
-        self._ip_addr: str = None
-        self._options = config_entry.options if config_entry else {}
-
-        # Add options update listener
-        if config_entry:
-            config_entry.async_on_unload(
-                config_entry.add_update_listener(self._update_options)
-            )
-
-    @property
-    def supports_brightness_control(self):
-        """Check whether device supports brightness control."""
-        return self.series in SUPPORTED_BRIGHTNESS_CONTROL_SERIES
-
-    @property
-    def supports_color_effect(self):
-        """Check whether device supports color modes."""
-        return self.series in SUPPORTED_COLOR_EFFECT_SERIES
-
-    @property
     def last_seen(self) -> float:
         """Get last seen UTC timestamp."""
         return self._last_seen
@@ -160,6 +146,11 @@ class AtombergDevice(AtombergBaseDevice):
     def ip_address(self) -> str | None:
         """Get IP address."""
         return self._ip_addr
+
+    @property
+    def mac(self) -> str:
+        """Get MAC address."""
+        return format_mac(self.id)
 
     def update_last_seen(self, value: float):
         """Update last seen timestamp."""
@@ -178,28 +169,51 @@ class AtombergDevice(AtombergBaseDevice):
 
     async def _async_send_command(self, command: dict) -> bool:
         """Send command to the device."""
-        if not self._options.get(CONF_USE_CLOUD_CONTROL, False) and self.ip_address:
-            message = json.dumps(command).encode()
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-                sent_bytes = sock.sendto(message, (self.ip_address, 5600))
-                res = sent_bytes > 0
-                if res:
-                    _LOGGER.debug(
-                        "Command sent to %s (%s): %s",
-                        self.name,
-                        self.ip_address,
-                        command,
-                    )
-                else:
-                    _LOGGER.error(
-                        "Failed to send command to %s (%s): %s",
-                        self.name,
-                        self.ip_address,
-                        command,
-                    )
-                return res
+        if self._api is None:
+            # Local-only mode — UDP is the only transport.
+            if not self.ip_address:
+                _LOGGER.warning(
+                    "No IP address known for %s yet; command dropped. "
+                    "Waiting for the device to broadcast.",
+                    self.name,
+                )
+                return False
+        elif not self._options.get(CONF_USE_CLOUD_CONTROL, False) and self.ip_address:
+            # Cloud mode with local preference: use UDP when IP is known.
+            pass
         else:
+            # Cloud mode (no local IP or cloud control forced).
             return await self._api.async_send_command(self.id, command)
+
+        # UDP send path (local mode or cloud-with-local-preference).
+        message = json.dumps(command).encode()
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sent_bytes = sock.sendto(message, (self.ip_address, 5600))
+            res = sent_bytes > 0
+            if res:
+                _LOGGER.debug(
+                    "Command sent to %s (%s): %s",
+                    self.name,
+                    self.ip_address,
+                    command,
+                )
+            else:
+                _LOGGER.error(
+                    "Failed to send command to %s (%s): %s",
+                    self.name,
+                    self.ip_address,
+                    command,
+                )
+            return res
+
+    async def async_request_state_refresh(self) -> bool:
+        """Trigger a no-op command that makes the fan broadcast current state.
+
+        Sending {"speedDelta": 0} prompts a fresh state broadcast from the device,
+        but some fans treat it as a speed change and power on. It is therefore not
+        called automatically; devices already broadcast their state periodically.
+        """
+        return await self._async_send_command({"speedDelta": 0})
 
     async def async_turn_on(self):
         """Turn on."""
@@ -255,9 +269,22 @@ class AtombergDevice(AtombergBaseDevice):
         """Set timer."""
         if value not in range(5):
             raise ValueError("Value must in range of 0-4.")
-        if await self._api.async_send_command(self.id, {"timer": value}):
-            _LOGGER.debug("%s: set sleep mode: %d", self.name, value)
+        if await self._async_send_command({"timer": value}):
+            _LOGGER.debug("%s: set timer: %d", self.name, value)
             self.update_state({ATTR_TIMER_HOURS: TIMER_MAPPING[value][0]})
+
+    def update_state(self, new_state: dict):
+        """Update states."""
+        if new_state.keys() - {ATTR_IS_ONLINE}:
+            self._state_confirmed = True
+        self._state.update(new_state)
+
+    def restore_state(self, saved_state: dict) -> bool:
+        """Restore a previously saved state unless a real one is already known."""
+        if self._state_confirmed or not saved_state:
+            return False
+        self._state.update(saved_state)
+        return True
 
 
 def utc_seconds_to_local_time(value: int) -> time:
@@ -275,17 +302,56 @@ def local_time_to_utc_seconds(value: time) -> int:
     return int(dt_util.as_utc(local_dt).timestamp())
 
 
-class AtombergPurifier(AtombergBaseDevice):
+class AtombergPurifier:
     """Atomberg water purifier, controlled through cloud APIs only."""
 
     def __init__(self, data: dict[str, Any], api: AtombergCloudAPI) -> None:
         """Init Atomberg water purifier."""
-        super().__init__(data, api)
+        self._device_id = data["device_id"]
+        self._series = data["series"]
+        self._model = data.get("model")
+        self._name = data.get("name") or self._device_id
+        self._api = api
+        self._state: dict = data["state"]
         self._supported_commands = {
             cmd["command"] for cmd in data.get("supported_commands") or []
         }
         # Sleep window times set while the window is off, sent when it's enabled
         self._pending_sleep_window: dict[str, int] = {}
+
+    @property
+    def state(self) -> dict[str, Any]:
+        """Get state."""
+        return deepcopy(self._state)
+
+    @property
+    def name(self) -> str:
+        """Get name."""
+        return self._name
+
+    @property
+    def id(self) -> str:
+        """Get device_id."""
+        return self._device_id
+
+    @property
+    def series(self) -> str:
+        """Get series."""
+        return self._series
+
+    @property
+    def model(self) -> str:
+        """Get model."""
+        return self._model
+
+    @property
+    def mac(self) -> str:
+        """Get MAC address."""
+        return format_mac(self.id)
+
+    def update_state(self, new_state: dict):
+        """Update states."""
+        self._state.update(new_state)
 
     def supports(self, key: str) -> bool:
         """Check whether the device reports and accepts a setting."""

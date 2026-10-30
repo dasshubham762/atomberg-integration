@@ -1,6 +1,6 @@
 """Cloud API for Atomberg."""
 
-import datetime as dt
+import datetime
 import functools
 from copy import deepcopy
 from logging import getLogger
@@ -88,7 +88,9 @@ class AtombergCloudAPI:
                     self._access_token, options={"verify_signature": False}
                 )
                 exp_timestamp = access_token_data["exp"]
-                exp_datetime = dt.datetime.fromtimestamp(exp_timestamp, dt.UTC)
+                exp_datetime = datetime.datetime.fromtimestamp(
+                    exp_timestamp, datetime.UTC
+                )
                 access_token_expired = utcnow() > exp_datetime
             except jwt.ExpiredSignatureError:
                 access_token_expired = True

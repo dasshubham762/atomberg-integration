@@ -14,6 +14,7 @@ DOMAIN = "atomberg"
 UDP_LISTENER = "udp_listener"
 ENTRIES = "entries"
 PURIFIER_COORDINATORS = "purifier_coordinators"
+SETUP_ACTIVE = "setup_active"
 
 CONF_REFRESH_TOKEN = "refresh_token"
 CONF_USE_CLOUD_CONTROL = "use_cloud_control"
@@ -24,14 +25,25 @@ CONF_PURIFIER_POLL_INTERVAL = "purifier_poll_interval"
 DEFAULT_PURIFIER_POLL_INTERVAL = 30  # Minutes, 48 API calls a day
 MIN_PURIFIER_POLL_INTERVAL = 15
 MAX_PURIFIER_POLL_INTERVAL = 240
+CONF_DEVICE_ID = "device_id"
+CONF_DEVICE_SERIES = "device_series"
+CONF_DISPLAY_NAME = "display_name"
+CONF_IP_ADDRESS = "ip_address"
 MANUFACTURER = "Atomberg"
+
+# Sentinel series value used when the device series is unknown.
+UNKNOWN_SERIES = "UNKNOWN"
 
 
 class ControlMethod(StrEnum):
     """Control method for Atomberg devices."""
 
+    # Bootstrap entry used to enable UDP autodiscovery; it does not control a fan.
+    LOCAL_DISCOVERY = "local_discovery"
+
     CLOUD = "cloud"
     IR = "ir"
+    LOCAL_UDP = "local_udp"
 
 
 class FanModel(StrEnum):
