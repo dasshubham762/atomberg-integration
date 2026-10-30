@@ -1,0 +1,60 @@
+{
+  "status": "Success",
+  "message": {
+    "device_state": [
+      {
+        "device_id": "6867258b9d78",
+        "series": "R1",
+        "power": true,
+        "last_recorded_speed": 4,
+        "sleep_mode": false,
+        "led": true,
+        "is_online": true,
+        "timer_hours": 0,
+        "timer_time_elapsed_mins": 0,
+        "ts_epoch_seconds": 1756200000
+      },
+      {
+        "device_id": "a0764ee4210c",
+        "series": "W2",
+        "is_online": true,
+        "ts_epoch_seconds": 1791998878,
+        "mode": 4,
+        "fallback_mode": 0,
+        "idle_sleep": 1,
+        "tds_threshold": 150,
+        "sleep_mode": 0,
+        "start_utc": 1767304800,
+        "stop_utc": 1767330000,
+        "input_tds": 412.0,
+        "tank_tds": 98.0,
+        "choking_faults": {
+          "raw": 9,
+          "healthy": false,
+          "codes": [
+            "RO_CHOKE",
+            "POST_RO_CHOKE"
+          ],
+          "descriptions": [
+            "RO membrane choked",
+            "Post-RO / common path choked"
+          ],
+          "filter_choke": true,
+          "sv_fault": false,
+          "unknown_bits": 0
+        },
+        "system_faults": {
+          "raw": 0,
+          "healthy": true,
+          "codes": [],
+          "descriptions": [],
+          "unknown_bits": 0
+        }
+      },
+      {
+        "device_id": "c0ffee000001",
+        "battery": 80
+      }
+    ]
+  }
+}

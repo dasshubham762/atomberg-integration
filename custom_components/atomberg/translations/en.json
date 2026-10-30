@@ -56,10 +56,12 @@
       "init": {
         "title": "Options",
         "data": {
-          "use_cloud_control": "Use cloud control"
+          "use_cloud_control": "Use cloud control",
+          "purifier_poll_interval": "Water purifier polling interval"
         },
         "data_description": {
-          "use_cloud_control": "When enabled, the integration will send control commands to the Atomberg cloud APIs instead of directly to the device."
+          "use_cloud_control": "When enabled, the integration will send control commands to the Atomberg cloud APIs instead of directly to the device.",
+          "purifier_poll_interval": "How often water purifier state is fetched from the Atomberg cloud. The API allows 100 calls a day, so the default of 30 minutes uses 48 of them."
         }
       }
     }

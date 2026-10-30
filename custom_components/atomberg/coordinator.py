@@ -6,7 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .api import AtombergCloudAPI
+from .api import DEVICE_TYPE_FAN, AtombergCloudAPI
 from .const import (
     CONF_DEVICE_ID,
     CONF_DEVICE_SERIES,
@@ -71,6 +71,7 @@ class AtombergDataUpdateCoordinator(DataUpdateCoordinator):
             self.devices = [
                 AtombergDevice(data=data, api=api, config_entry=config_entry)
                 for data in api.device_list.values()
+                if data["device_type"] == DEVICE_TYPE_FAN
             ]
         else:
             # Local UDP mode: single device from config entry data.

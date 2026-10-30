@@ -3,26 +3,32 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 
 from homeassistant.config_entries import SOURCE_INTEGRATION_DISCOVERY, ConfigEntry
 from homeassistant.const import CONF_API_KEY, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
 
-from .api import AtombergCloudAPI
+from .api import DEVICE_TYPE_WATER_PURIFIER, AtombergCloudAPI
 from .const import (
     CONF_CONTROL_METHOD,
     CONF_DEVICE_ID,
     CONF_DEVICE_SERIES,
     CONF_IP_ADDRESS,
+    CONF_PURIFIER_POLL_INTERVAL,
     CONF_REFRESH_TOKEN,
+    DEFAULT_PURIFIER_POLL_INTERVAL,
     DOMAIN,
     ENTRIES,
+    PURIFIER_COORDINATORS,
     SETUP_ACTIVE,
     UDP_LISTENER,
     ControlMethod,
 )
 from .coordinator import AtombergDataUpdateCoordinator
+from .device import AtombergPurifier
+from .purifier_coordinator import AtombergPurifierCoordinator
 from .udp_listener import DISCOVERY_CALLBACK_KEY, UDPListener
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,6 +39,10 @@ CLOUD_PLATFORMS: list[Platform] = [
     Platform.LIGHT,
     Platform.SENSOR,
     Platform.SELECT,
+    Platform.BUTTON,
+    Platform.NUMBER,
+    Platform.TIME,
+    Platform.BINARY_SENSOR,
 ]
 
 IR_PLATFORMS: list[Platform] = [
@@ -123,9 +133,44 @@ async def _async_setup_cloud_entry(hass: HomeAssistant, entry: ConfigEntry) -> b
     )
     domain_data[ENTRIES][entry.entry_id] = coordinator
 
+    purifiers = [
+        AtombergPurifier(data=data, api=api)
+        for data in api.device_list.values()
+        if data["device_type"] == DEVICE_TYPE_WATER_PURIFIER
+    ]
+    if purifiers:
+        purifier_coordinator = AtombergPurifierCoordinator(
+            hass,
+            entry,
+            api,
+            purifiers,
+            entry.options.get(
+                CONF_PURIFIER_POLL_INTERVAL, DEFAULT_PURIFIER_POLL_INTERVAL
+            ),
+        )
+        # Seed with the state fetched during device sync to save an API call
+        purifier_coordinator.async_set_updated_data({d.id: d.state for d in purifiers})
+        domain_data.setdefault(PURIFIER_COORDINATORS, {})[entry.entry_id] = (
+            purifier_coordinator
+        )
+        entry.async_on_unload(entry.add_update_listener(_async_update_options))
+
     await hass.config_entries.async_forward_entry_setups(entry, CLOUD_PLATFORMS)
 
     return True
+
+
+async def _async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Apply updated options to the purifier coordinator."""
+    coordinator: AtombergPurifierCoordinator | None = (
+        hass.data[DOMAIN].get(PURIFIER_COORDINATORS, {}).get(entry.entry_id)
+    )
+    if coordinator:
+        coordinator.update_interval = timedelta(
+            minutes=entry.options.get(
+                CONF_PURIFIER_POLL_INTERVAL, DEFAULT_PURIFIER_POLL_INTERVAL
+            )
+        )
 
 
 async def _async_setup_local_udp_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -234,6 +279,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
     domain_data[ENTRIES].pop(entry.entry_id, None)
+    domain_data.get(PURIFIER_COORDINATORS, {}).pop(entry.entry_id, None)
     udp_listener.remove_callback(entry)
 
     # Only close the listener when async_setup did NOT own it and no entries remain.

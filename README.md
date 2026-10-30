@@ -9,7 +9,7 @@
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
-*Integration for **[Atomberg smart fans](https://atomberg.com/atomberg-ceiling-fans/smart-fans)***
+*Integration for **[Atomberg smart fans](https://atomberg.com/atomberg-ceiling-fans/smart-fans)** and water purifiers*
 
 ## Tested on
 - **[Atomberg Renesa+ Ceiling Fan](https://atomberg.com/atomberg-renesa-smart-iot-enabled-ceiling-fans-with-bldc-motor-and-remote)**
@@ -127,6 +127,29 @@ The IR setup creates the following entities:
 - **One-way communication** — IR is transmit-only. The integration tracks assumed state internally but cannot detect if the fan is controlled by the physical remote. If you use the physical remote, resync the entity in Home Assistant by toggling it.
 - **Line of sight required** — The IR emitter must be able to "see" the fan's IR receiver. Obstructions will prevent commands from being received.
 - **NEC protocol** — Atomberg fans use NEC protocol with address `0xF300`. The IR codes are based on community-decoded values and are compatible with Gorilla Efficio, Renesa, Aris, Erica, and other Atomberg models.
+
+## Water Purifiers
+
+Atomberg water purifiers (Intellon, series W2) on the same account are added automatically in **Cloud API** mode. They appear as their own device with these entities:
+
+| Entity | Type | Description |
+|--------|------|-------------|
+| Purification mode | `select` | RO only, Adaptive, TasteTune 50-100 / 75-125 / 100-150 ppm, Vacation |
+| Fallback mode | `select` | Mode used when the unit falls back: RO only or a TasteTune mode |
+| TDS threshold | `number` | Input TDS (100-300 ppm) that decides RO vs UF treatment |
+| Idle display sleep | `switch` | Turn off the display and lights while idle |
+| Sleep window | `switch` | Enable the daily sleep window |
+| Sleep window start / end | `time` | Daily sleep window, in your Home Assistant time zone |
+| Input TDS / Tank TDS | `sensor` | Inlet and stored water TDS in ppm |
+| Filter choked / Valve fault / System fault | `binary_sensor` | Problems reported by the purifier, with fault codes as attributes |
+| No water / Tank full | `binary_sensor` | Inlet water missing, tank full |
+| Refresh | `button` | Fetch the latest state now |
+
+TDS threshold and the sleep window are only created when the purifier firmware reports them. Sleep window times changed while the window is off are sent when you turn it on.
+
+### Polling and API quota
+
+Unlike fans, purifiers don't broadcast their state on the local network, so the integration polls the Atomberg cloud. The free API plan allows **100 calls a day** (failed calls count too). By default purifiers are polled every **30 minutes** (48 calls a day, all purifiers in one call), which leaves room for commands and restarts. Change it under the integration's **Configure** options (15-240 minutes). Each command and each **Refresh** press uses one call.
 
 ## Contributions are welcome!
 

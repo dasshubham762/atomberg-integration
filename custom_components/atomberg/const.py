@@ -2,10 +2,18 @@
 
 from enum import StrEnum
 
+try:
+    from homeassistant.const import UnitOfRatio
+
+    UNIT_PPM = UnitOfRatio.PARTS_PER_MILLION
+except ImportError:  # Home Assistant < 2026.7
+    UNIT_PPM = "ppm"
+
 DOMAIN = "atomberg"
 
 UDP_LISTENER = "udp_listener"
 ENTRIES = "entries"
+PURIFIER_COORDINATORS = "purifier_coordinators"
 SETUP_ACTIVE = "setup_active"
 
 CONF_REFRESH_TOKEN = "refresh_token"
@@ -13,6 +21,10 @@ CONF_USE_CLOUD_CONTROL = "use_cloud_control"
 CONF_CONTROL_METHOD = "control_method"
 CONF_IR_EMITTER_ENTITY = "ir_emitter_entity"
 CONF_FAN_MODEL = "fan_model"
+CONF_PURIFIER_POLL_INTERVAL = "purifier_poll_interval"
+DEFAULT_PURIFIER_POLL_INTERVAL = 30  # Minutes, 48 API calls a day
+MIN_PURIFIER_POLL_INTERVAL = 15
+MAX_PURIFIER_POLL_INTERVAL = 240
 CONF_DEVICE_ID = "device_id"
 CONF_DEVICE_SERIES = "device_series"
 CONF_DISPLAY_NAME = "display_name"
