@@ -78,6 +78,8 @@ class AtombergFanEntity(AtombergEntity, FanEntity):
         if not self.is_on:
             return 0
         speed = self.device_state.get(ATTR_SPEED, 1)
+        if speed not in ORDERED_FAN_SPEEDS:
+            speed = ORDERED_FAN_SPEEDS[0]
         return ordered_list_item_to_percentage(ORDERED_FAN_SPEEDS, speed)
 
     @property
@@ -134,3 +136,4 @@ class AtombergFanEntity(AtombergEntity, FanEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the fan."""
         await self._device.async_turn_off()
+

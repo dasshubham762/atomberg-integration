@@ -9,7 +9,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .coordinator import AtombergDataUpdateCoordinator
-from .device import ATTR_SPEED, ATTR_TIMER_HOURS, ATTR_TIMER_TIME_ELAPSED_MINS, AtombergDevice
+from .device import (
+    ATTR_SPEED,
+    ATTR_TIMER_HOURS,
+    ATTR_TIMER_TIME_ELAPSED_MINS,
+    AtombergDevice,
+)
 from .entity import AtombergEntity, platform_async_setup_entry
 
 _LOGGER = getLogger(__name__)
