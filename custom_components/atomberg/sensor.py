@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .coordinator import AtombergDataUpdateCoordinator
-from .device import ATTR_TIMER_HOURS, ATTR_TIMER_TIME_ELAPSED_MINS, AtombergDevice
+from .device import ATTR_SPEED, ATTR_TIMER_HOURS, ATTR_TIMER_TIME_ELAPSED_MINS, AtombergDevice
 from .entity import AtombergEntity, platform_async_setup_entry
 
 _LOGGER = getLogger(__name__)
@@ -24,6 +24,12 @@ async def async_setup_entry(
         entry,
         async_add_entities,
         TimerElapsedTimeSensor,
+    )
+    await platform_async_setup_entry(
+        hass,
+        entry,
+        async_add_entities,
+        SpeedSensor,
     )
 
 
@@ -45,7 +51,7 @@ class TimerElapsedTimeSensor(AtombergEntity, SensorEntity):
 
     @property
     def icon(self) -> str:
-        """Get icon dynamically."""
+        """Get icon dynamically based on elapsed time."""
         icons = [
             "mdi:clock-time-twelve-outline",
             "mdi:clock-time-one-outline",
@@ -60,8 +66,8 @@ class TimerElapsedTimeSensor(AtombergEntity, SensorEntity):
             "mdi:clock-time-ten-outline",
             "mdi:clock-time-eleven-outline",
         ]
-        timer_mins = self.device_state[ATTR_TIMER_HOURS] * 60
-        if not timer_mins:
+        timer_mins = self.device_state.get(ATTR_TIMER_HOURS, 0) * 60
+        if not timer_mins or self.native_value is None:
             return icons[0]
 
         return icons[round(self.native_value / timer_mins * (len(icons) - 1))]
@@ -69,4 +75,32 @@ class TimerElapsedTimeSensor(AtombergEntity, SensorEntity):
     @property
     def native_value(self) -> int:
         """Get value in minutes."""
-        return self.device_state[ATTR_TIMER_TIME_ELAPSED_MINS]
+        return self.device_state.get(ATTR_TIMER_TIME_ELAPSED_MINS, 0)
+
+
+class SpeedSensor(AtombergEntity, SensorEntity):
+    """Speed sensor entity displaying current discrete fan speed."""
+
+    def __init__(
+        self, coordinator: AtombergDataUpdateCoordinator, device: AtombergDevice
+    ) -> None:
+        """Initialize the entity."""
+        super().__init__(coordinator, device, _LOGGER)
+
+        self._attr_unique_id = self._get_unique_id(
+            Platform.SENSOR, suffix="speed"
+        )
+        self._attr_name = self._device.name + " speed"
+
+    @property
+    def icon(self) -> str:
+        """Get speed icon dynamically."""
+        speed = self.native_value
+        if speed in range(1, 7):
+            return f"mdi:numeric-{speed}-box-outline"
+        return "mdi:speedometer"
+
+    @property
+    def native_value(self) -> int:
+        """Get current fan speed (1-6)."""
+        return self.device_state.get(ATTR_SPEED, 0)
