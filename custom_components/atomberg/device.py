@@ -188,11 +188,13 @@ class AtombergDevice:
         """
         return await self._async_send_command({"speedDelta": 0})
 
-    async def async_turn_on(self):
+    async def async_turn_on(self, speed: int | None = None):
         """Turn on."""
         cmd = {ATTR_POWER: True}
+        if speed is not None:
+            cmd[ATTR_SPEED] = speed
         if await self._async_send_command(cmd):
-            _LOGGER.debug("%s: turned on", self.name)
+            _LOGGER.debug("%s: turned on (speed=%s)", self.name, speed)
             self.update_state(cmd)
 
     async def async_turn_off(self):
@@ -203,10 +205,11 @@ class AtombergDevice:
             self.update_state(cmd)
 
     async def async_set_speed(self, value: int):
-        """Set speed."""
+        """Set speed and ensure power is turned on."""
+        value = int(value)
         if value not in range(1, 7):
             raise ValueError("Value must in range of 1-6.")
-        cmd = {ATTR_SPEED: value}
+        cmd = {ATTR_SPEED: value, ATTR_POWER: True}
         if await self._async_send_command(cmd):
             _LOGGER.debug("%s: set speed %d", self.name, value)
             self.update_state(cmd)
